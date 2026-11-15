@@ -56,7 +56,7 @@ Copy Box does not use Accessibility Services, does not run in the background to 
 
 Copy Box does not sell your clips or share them with anyone. Information collected by Google AdMob is described in the Advertising section above.
 
-When you tap a clip, Copy Box copies it to the system clipboard. Other apps can then read it, under Android's normal rules.
+When you tap the copy button on a clip, Copy Box copies it to the system clipboard. Other apps can then read it, under Android's normal rules.
 
 ## Retention and deletion
 

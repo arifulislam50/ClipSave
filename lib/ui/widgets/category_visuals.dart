@@ -35,19 +35,21 @@ extension ClipCategoryVisuals on ClipCategory {
     }
   }
 
-  /// Category colour. The avatar uses it at 18% alpha behind the full-colour
-  /// icon (icon contrast ≥ 5.6:1 on the dark card, ≥ 4.1:1 on white).
+  /// Category colour: the type word in each clip's meta line, and the
+  /// folders-screen category avatars (at 18% alpha behind the icon).
+  /// Dark values are the design colours (≥ 6.8:1 on the #121214 card);
+  /// light mode uses deeper shades of the same hues (≥ 5.3:1 on white).
   Color color(Brightness brightness) {
     final dark = brightness == Brightness.dark;
     switch (this) {
       case ClipCategory.link:
-        return dark ? const Color(0xFF5AA9FF) : const Color(0xFF1D5FB8);
+        return dark ? const Color(0xFF6AA9FF) : const Color(0xFF1D5FB8);
       case ClipCategory.email:
-        return dark ? const Color(0xFFB794FF) : const Color(0xFF6B3FB8);
+        return dark ? const Color(0xFFFFC857) : const Color(0xFF8A5A00);
       case ClipCategory.phone:
-        return dark ? const Color(0xFF4CD493) : const Color(0xFF1E7A4C);
+        return dark ? const Color(0xFF4ADE9A) : const Color(0xFF1E7A4C);
       case ClipCategory.number:
-        return dark ? const Color(0xFFFFC14D) : const Color(0xFF8A5A00);
+        return dark ? const Color(0xFFA78BFA) : const Color(0xFF6B3FB8);
       case ClipCategory.text:
         return dark ? const Color(0xFFFD79A8) : const Color(0xFFB01F63);
     }

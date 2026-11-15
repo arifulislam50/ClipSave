@@ -172,7 +172,7 @@ flutter run
 | Oversized share | Share >100,000 characters | Toast "Text is too long", nothing queued |
 | Password manager | Copy a password from a manager that sets `IS_SENSITIVE` | Never auto-saved. The tile shows "Not saved…" |
 | Auto off | Turn off Auto-save, copy, open Copy Box | No read and no Android paste notice |
-| Copy back | Tap a clip | Clipboard updated (Android 13+ shows its own confirmation) |
+| Copy back | Tap the copy button on a clip | Clipboard updated (Android 13+ shows its own confirmation). Tapping the clip itself expands/collapses it and does **not** copy |
 | Search / filters / folders / favourites | Use each | List updates. A deleted folder's clips remain |
 | Swipe delete | Swipe left, tap Undo | Clip restored |
 | Themes | System / Light / Dark | Whole UI switches |

@@ -1,4 +1,6 @@
 import 'package:clipsave/ui/screens/history_screen.dart';
+import 'package:clipsave/ui/widgets/category_visuals.dart';
+import 'package:clipsave/ui/widgets/clip_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -38,6 +40,69 @@ void main() {
       await tester.tap(find.byType(FloatingActionButton));
       await tester.pumpAndSettle();
       expect(find.text('Type or paste text to keep'), findsOneWidget);
+      await h.close(tester);
+    });
+  });
+
+  group('Step 2: clip tile', () {
+    const longText = 'Line one of a long clip that keeps going and going so that it '
+        'needs more than two lines when collapsed in the history list. '
+        'Second sentence with more words. Third sentence with even more words '
+        'to be sure the preview is truncated. END-MARKER';
+
+    testWidgets('no category avatar on tiles', (tester) async {
+      final h = await HistoryHarness.pump(tester, clips: ['hello', 'https://flutter.dev']);
+      expect(find.byType(ClipTile), findsNWidgets(2));
+      expect(find.descendant(of: find.byType(ClipTile), matching: find.byType(CategoryAvatar)),
+          findsNothing);
+      expect(tester.getSize(find.byType(ClipTile).first).height, greaterThanOrEqualTo(72));
+      await h.close(tester);
+    });
+
+    testWidgets('one tap expands, a second tap collapses', (tester) async {
+      final h = await HistoryHarness.pump(tester, clips: [longText]);
+      expect(find.text(ClipTile.collapseHint), findsNothing);
+      await tester.tap(find.byType(ClipTile));
+      await tester.pumpAndSettle();
+      expect(find.text(ClipTile.collapseHint), findsOneWidget);
+      expect(find.byType(SelectableText), findsOneWidget);
+      await tester.tap(find.text(ClipTile.collapseHint));
+      await tester.pumpAndSettle();
+      expect(find.text(ClipTile.collapseHint), findsNothing);
+      expect(find.byType(SelectableText), findsNothing);
+      await h.close(tester);
+    });
+
+    testWidgets('tapping the tile does not copy; the copy button does', (tester) async {
+      final h = await HistoryHarness.pump(tester, clips: ['P@ssw0rd!', 'plain note']);
+      await tester.tap(find.text('plain note'));
+      await tester.pumpAndSettle();
+      expect(h.bridge.copies, isEmpty);
+      await tester.tap(find.byTooltip('Copy').at(1)); // second tile = 'plain note'
+      await tester.pump();
+      await tester.tap(find.byTooltip('Copy').first); // 'P@ssw0rd!' is newest
+      await tester.pump();
+      expect(h.bridge.copies, [('plain note', false), ('P@ssw0rd!', true)]);
+      await h.close(tester);
+    });
+
+    testWidgets('expanded text is capped at 10,000 characters', (tester) async {
+      final h = await HistoryHarness.pump(tester, clips: ['x' * 12000]);
+      await tester.tap(find.byType(ClipTile));
+      await tester.pumpAndSettle();
+      expect(find.text(ClipTile.truncatedNote), findsOneWidget);
+      final shown = tester.widget<SelectableText>(find.byType(SelectableText));
+      expect(shown.data!.length, ClipTile.maxExpandedChars);
+      await h.close(tester);
+    });
+
+    testWidgets('all seven filter chips are still present', (tester) async {
+      final h = await HistoryHarness.pump(tester, clips: ['hello']);
+      for (final label in ['All', 'Favourites', 'Text', 'Links', 'Emails', 'Phones', 'Numbers']) {
+        await tester.dragUntilVisible(find.widgetWithText(FilterChip, label),
+            find.byType(ListView).first, const Offset(-120, 0));
+        expect(find.widgetWithText(FilterChip, label), findsOneWidget, reason: label);
+      }
       await h.close(tester);
     });
   });

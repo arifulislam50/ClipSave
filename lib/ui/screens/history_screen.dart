@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../data/models/clip_filter.dart';
+import '../../data/models/clip_item.dart';
 import '../../state/clips_controller.dart';
 import '../../state/settings_controller.dart';
 import '../actions/clip_actions.dart';
@@ -152,8 +153,28 @@ class _SearchFieldState extends State<_SearchField> {
   }
 }
 
-class _ClipList extends StatelessWidget {
+class _ClipList extends StatefulWidget {
   const _ClipList();
+
+  @override
+  State<_ClipList> createState() => _ClipListState();
+}
+
+class _ClipListState extends State<_ClipList> {
+  /// Expanded/collapsed per clip id. Several may be open at once; toggling one
+  /// only rebuilds that tile (each tile listens to its own notifier).
+  final Map<int, ValueNotifier<bool>> _expanded = {};
+
+  ValueNotifier<bool> _expandedFor(ClipItem item) =>
+      _expanded.putIfAbsent(item.id ?? -item.content.hashCode, () => ValueNotifier<bool>(false));
+
+  @override
+  void dispose() {
+    for (final n in _expanded.values) {
+      n.dispose();
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -223,7 +244,7 @@ class _ClipList extends StatelessWidget {
                 color: Theme.of(context).colorScheme.onErrorContainer),
           ),
           onDismissed: (_) => ClipActions.delete(context, item),
-          child: ClipTile(item: item),
+          child: ClipTile(item: item, expanded: _expandedFor(item)),
         );
       },
     );

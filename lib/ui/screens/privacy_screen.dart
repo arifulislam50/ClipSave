@@ -52,6 +52,13 @@ class PrivacyScreen extends StatelessWidget {
           'written to storage unless you tap "Save anyway".'
     ),
     (
+      'Copying',
+      'When you tap the copy button on a clip, Copy Box copies it to the system '
+          'clipboard, where other apps can read it under Android\'s normal rules. '
+          'Clips that look sensitive are marked so Android 13+ hides them in the '
+          'copy preview. Tapping the clip itself only expands or collapses it.'
+    ),
+    (
       'Deleting your data',
       'Delete single clips, clear history in Settings, or uninstall the app to '
           'remove everything Copy Box stored on the device.'
