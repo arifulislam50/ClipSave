@@ -36,6 +36,7 @@ class ClipSources {
   static const String share = 'share';
   static const String select = 'select';
   static const String tile = 'tile';
+  static const String notification = 'notification';
 
   static String label(String source) {
     switch (source) {
@@ -51,6 +52,8 @@ class ClipSources {
         return 'Text selection';
       case tile:
         return 'Quick tile';
+      case notification:
+        return 'Notification';
       default:
         return 'Saved';
     }
