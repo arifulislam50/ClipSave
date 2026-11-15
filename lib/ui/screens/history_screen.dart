@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -160,7 +162,37 @@ class _ClipList extends StatefulWidget {
   State<_ClipList> createState() => _ClipListState();
 }
 
-class _ClipListState extends State<_ClipList> {
+class _ClipListState extends State<_ClipList> with WidgetsBindingObserver {
+  /// Rebuilds at local midnight (and on resume) so "Today"/"Yesterday" labels
+  /// stay correct across midnight and device clock changes.
+  Timer? _midnight;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _scheduleMidnight();
+  }
+
+  void _scheduleMidnight() {
+    _midnight?.cancel();
+    final now = DateTime.now();
+    final next = DateTime(now.year, now.month, now.day + 1, 0, 0, 1);
+    _midnight = Timer(next.difference(now), () {
+      if (!mounted) return;
+      setState(() {});
+      _scheduleMidnight();
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      setState(() {});
+      _scheduleMidnight();
+    }
+  }
+
   /// Expanded/collapsed per clip id. Several may be open at once; toggling one
   /// only rebuilds that tile (each tile listens to its own notifier).
   final Map<int, ValueNotifier<bool>> _expanded = {};
@@ -170,6 +202,8 @@ class _ClipListState extends State<_ClipList> {
 
   @override
   void dispose() {
+    _midnight?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     for (final n in _expanded.values) {
       n.dispose();
     }

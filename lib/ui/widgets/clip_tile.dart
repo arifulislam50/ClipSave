@@ -16,6 +16,8 @@ import 'category_visuals.dart';
 /// - One tap toggles collapsed (2 lines) / expanded (full text, selectable,
 ///   capped at [maxExpandedChars]) with a ~200 ms AnimatedSize. The state lives
 ///   in [expanded], owned by the list per clip id, so only this tile rebuilds.
+/// - The last line shows when the clip was last saved ([ClipItem.updatedAt],
+///   the timestamp the list is sorted by), in local time: "Today · 12:48 PM".
 /// - Tapping does NOT copy. Copy only via the copy button (or the long-press
 ///   menu), which still marks sensitive-looking clips EXTRA_IS_SENSITIVE.
 class ClipTile extends StatelessWidget {
@@ -73,6 +75,7 @@ class ClipTile extends StatelessWidget {
       child: Semantics(
         container: true,
         button: true,
+        label: 'Saved ${TimeFormat.semantic(item.updatedAt)}',
         value: isExpanded ? 'Expanded' : 'Collapsed',
         onTap: _toggle,
         onTapHint: isExpanded ? 'Collapse' : 'Expand',
@@ -116,9 +119,7 @@ class ClipTile extends StatelessWidget {
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
-                                TextSpan(
-                                    text: ' · ${TimeFormat.relative(item.updatedAt)}'
-                                        ' · ${ClipSources.label(item.source)}'),
+                                TextSpan(text: ' · ${ClipSources.label(item.source)}'),
                               ]),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -137,6 +138,14 @@ class ClipTile extends StatelessWidget {
                                 ],
                               ),
                             ],
+                            // Last line of the box (above the expanded-only hint):
+                            // when the clip was saved, in local time.
+                            const SizedBox(height: 4),
+                            Text(
+                              TimeFormat.formatDateTime(item.updatedAt),
+                              key: const ValueKey<String>('clip-date'),
+                              style: muted12,
+                            ),
                             if (isExpanded) ...[
                               const SizedBox(height: 6),
                               Text(collapseHint, style: muted12),
@@ -207,7 +216,7 @@ Future<void> showClipActionsSheet(BuildContext context, ClipItem item) {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
               child: Text(
-                'Saved ${TimeFormat.full(item.createdAt)}',
+                'First saved ${TimeFormat.absolute(item.createdAt)}',
                 style: Theme.of(sheetContext).textTheme.labelMedium,
               ),
             ),

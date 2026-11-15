@@ -106,4 +106,37 @@ void main() {
       await h.close(tester);
     });
   });
+
+  group('Step 3: date and time line', () {
+    final dateLine = RegExp(r'^(Today|Yesterday|\d{1,2} [A-Z][a-z]{2} \d{4}) · \d{1,2}:\d{2} (AM|PM)$');
+
+    testWidgets('the date line is the last text line; no relative time', (tester) async {
+      final h = await HistoryHarness.pump(tester, clips: ['hello world']);
+      final tile = find.byType(ClipTile);
+      final texts = find.descendant(of: tile, matching: find.byType(RichText));
+      final lines = texts.evaluate().map((e) {
+        final w = e.widget as RichText;
+        return (y: tester.getTopLeft(find.byWidget(w)).dy, text: w.text.toPlainText());
+      // Icons also render as RichText (one private-use glyph); skip them.
+      }).where((l) => l.text.trim().length > 1).toList()
+        ..sort((a, b) => a.y.compareTo(b.y));
+      expect(dateLine.hasMatch(lines.last.text), isTrue, reason: 'last line was "${lines.last.text}"');
+      expect(lines.last.text, startsWith('Today · '));
+      expect(find.textContaining(' ago'), findsNothing);
+      expect(find.textContaining('Just now'), findsNothing);
+      // Meta line is "Type · Source".
+      expect(lines.any((l) => l.text == 'Text · Typed'), isTrue);
+      await h.close(tester);
+    });
+
+    testWidgets('date line stays last when expanded (hint below it)', (tester) async {
+      final h = await HistoryHarness.pump(tester, clips: ['hello world']);
+      await tester.tap(find.byType(ClipTile));
+      await tester.pumpAndSettle();
+      final date = tester.getTopLeft(find.byKey(const ValueKey<String>('clip-date'))).dy;
+      final hint = tester.getTopLeft(find.text(ClipTile.collapseHint)).dy;
+      expect(hint, greaterThan(date));
+      await h.close(tester);
+    });
+  });
 }
