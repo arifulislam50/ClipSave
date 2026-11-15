@@ -96,22 +96,29 @@ class FoldersScreen extends StatelessWidget {
               ),
           const SizedBox(height: 8),
           const SectionHeader('AUTOMATIC CATEGORIES'),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 1.55,
-            children: [
-              for (final c in _gridCategories)
-                _CategoryCard(
-                  category: c,
-                  count: controller.categoryCount(c),
-                  onTap: () => onOpenCategory(c),
+          // 2x2 grid of equal-height rows; heights follow content, so large
+          // text sizes never overflow.
+          for (var row = 0; row < _gridCategories.length; row += 2)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (var i = row; i < row + 2; i++) ...[
+                      if (i > row) const SizedBox(width: 12),
+                      Expanded(
+                        child: _CategoryCard(
+                          category: _gridCategories[i],
+                          count: controller.categoryCount(_gridCategories[i]),
+                          onTap: () => onOpenCategory(_gridCategories[i]),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-            ],
-          ),
+              ),
+            ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -274,9 +281,10 @@ class _CategoryCard extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisSize: MainAxisSize.min,
             children: [
               CategoryAvatar(category: category, size: 40),
+              const SizedBox(height: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

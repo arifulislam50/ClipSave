@@ -192,15 +192,16 @@ Release builds and Play Store bundles: see **[BUILD.md](BUILD.md)**. Privacy pol
 
 ## Verification status
 
-**This project has not been compiled or run.** The authoring environment had no Flutter SDK, Android SDK or network. Only SDK-free checks were executed:
+**Not compiled or run yet.** The environment that produced the Copy Box rebrand had no Flutter or Android SDK, so `flutter pub get`, `dart format`, `flutter analyze`, `flutter test` and `flutter build apk` were **not** run there. Run them before merging. The Codemagic workflow in `codemagic.yaml` builds a debug APK.
 
-| Check | Where | Status |
-|-------|-------|--------|
-| Regexes and decision logic (38 cases parsed from the Dart tests) | `python3 -I tool/verify_logic.py .` | Passed |
-| SQL schema, dedupe, LIKE escaping, prune, FK `SET NULL`, folder counts (10 checks) | same script | Passed |
-| Imports, bracket balance, XML parsing, resource refs, channel and method names | `python3 -I tool/check_structure.py .` | Passed |
-| Security invariants (sensitivity gate before every automatic save, size cap, non-exported tile activity) | same script | Passed. Also confirmed to **fail** when the gate is removed. |
-| `flutter analyze`, `flutter test` (including the new controller tests), Kotlin compile | your machine | **Not run** |
-| Tile focus behaviour, BAL opt-in, `EXTRA_IS_SENSITIVE` copy preview, on-device flows | real devices | **Not run.** Use the manual test plan above. |
+SDK-free checks that were run and pass:
+
+| Check | Command | Covers |
+|-------|---------|--------|
+| Logic + SQL | `python3 -I tool/verify_logic.py .` | 38 detection/classification cases from the Dart tests; 11 SQL checks (dedupe, LIKE escaping, prune, FK, folder and category counts) |
+| Structure + invariants | `python3 -I tool/check_structure.py .` | Imports, brackets, XML, resource refs, channel names; sensitivity gate; size cap; non-exported tile activity; **only AdMob permissions**; **AdMob App ID in manifest == `AdConfig`**; **only the two ad files use the ads SDK, they never reference clip data, `AdRequest()` has no targeting**; logo geometry identical in `app_logo.dart` and `tool/generate_logo.py` |
+| Contrast | (computed during the redesign) | #2D3436 on #FD79A8 = 5.1:1; #B01F63 on #FFE3EE = 5.4:1; muted #6B6470 on #FFFAFC = 5.5:1; category avatars ≥ 4.6:1. The amber star (#FDCB6E) is 1.5:1 on white, so it carries a "Favourite" label and is never the only signal. |
+
+New Dart tests to run with `flutter test`: `test/copy_box_ui_test.dart` (theme colours, splash timing / init wait / failure / reduced motion, AppLogo, counter format, AdMob test-ID guard).
 
 See [CHANGELOG.md](CHANGELOG.md) for what changed in the security review.

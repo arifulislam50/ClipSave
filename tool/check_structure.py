@@ -163,6 +163,18 @@ for f in dart_files:
             if m.group(1).strip():
                 errors.append(f'{rel}: AdRequest must have no targeting arguments, found ({m.group(1).strip()})')
 
+# ---- Logo geometry: Dart widget == generator ---------------------------------
+gen = (root / 'tool/generate_logo.py').read_text()
+logo = (root / 'lib/ui/widgets/app_logo.dart').read_text()
+py_cards = [tuple(map(float, c)) for c in re.findall(r'\((\d+), (\d+), (\d+), (\d+), [\d.]+\)', gen.split('CARDS =')[1].split('\n')[0])]
+dart_cards = [tuple(map(float, c)) for c in re.findall(r'Rect\.fromLTRB\((\d+), (\d+), (\d+), (\d+)\)', logo)]
+py_lines = re.findall(r'\(\((\d+), (\d+)\), \((\d+), (\d+)\)\)', gen.split('LINES =')[1].split('\n')[0])
+dart_lines = re.findall(r'\(Offset\((\d+), (\d+)\), Offset\((\d+), (\d+)\)\)', logo)
+if not py_cards or py_cards != dart_cards:
+    errors.append(f'logo cards differ: generate_logo.py {py_cards} vs app_logo.dart {dart_cards}')
+if not py_lines or py_lines != dart_lines:
+    errors.append('logo lines differ between generate_logo.py and app_logo.dart')
+
 ml = re.search(r'maxClipLength = ([\d_]+)', (root / 'lib/core/constants.dart').read_text()).group(1)
 kl = re.search(r'MAX_CLIP_LENGTH = ([\d_]+)', (root / 'android/app/src/main/kotlin/com/clipsave/app/ClipReader.kt').read_text()).group(1)
 if ml.replace('_', '') != kl.replace('_', ''):
