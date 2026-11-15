@@ -185,7 +185,7 @@ flutter run
 | Themed icon | Android 13+, enable themed icons | Monochrome three-card icon |
 | Lock screen | Tap the tile while locked | Asks to unlock, then captures |
 
-Release builds and Play Store bundles: see **[BUILD.md](BUILD.md)**. Privacy policy: see **[PRIVACY_POLICY.md](PRIVACY_POLICY.md)**.
+Release builds and Play Store bundles: see **[BUILD.md](BUILD.md)**. Codemagic workflows (`codemagic.yaml`): `clipsave-android` (debug APK), `copybox-release-apk` (smallest arm64 release APK, obfuscated), `copybox-release-aab` (Play bundle), `copybox-size-report` (`--analyze-size`). Size and start-up measurement: BUILD.md §8. Privacy policy: see **[PRIVACY_POLICY.md](PRIVACY_POLICY.md)**.
 
 ## Limits
 

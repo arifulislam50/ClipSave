@@ -1,5 +1,15 @@
 # Changelog
 
+## Copy Box: New clip, expandable tiles, dates, fast start, small APK (PR #1)
+
+Not build-tested here (no Flutter/Android SDK); APK/AAB sizes not measured. See BUILD.md §8.
+
+1. **New clip replaces Save clipboard:** History has one extended FAB, "New clip" (opens the editor), and no app-bar edit icon. The empty state depends on whether auto-save is on. Auto-save skips now offer **Save anyway**. The tile is called "Save to Copy Box". Every text now says the clipboard is read only when the app opens (auto-save) or from the tile.
+2. **Clip tiles:** no avatar; the type word uses the category colour. Tap expands/collapses (selectable, capped at 10,000 chars). Copying only via the copy button or the long-press menu. The star sits next to the copy button.
+3. **Dates:** the last line of each tile shows "Today · 12:48 PM" / "Yesterday · …" / "15 Nov 2026 · …" in local time. The meta line is "Type · Source".
+4. **Fast start:** `runApp` first. Settings and the database open in parallel during the splash; ads consent runs in the background. The splash lasts 1.5–3 s. History pages are 50 clips. DB v2 adds an index on `created_at`. The native inbox drain moved off the main thread.
+5. **Small APK:** release arm64, AAB and size-report Codemagic workflows. R8, resource shrinking, English-only resources, arm64 filter, packaging excludes.
+
 ## Copy Box follow-up fixes (PR #1)
 
 Not build-tested here: no Flutter or Android SDK.

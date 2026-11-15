@@ -132,6 +132,50 @@ Other answers:
 - **Can users request deletion?** On-device data: delete in the app or uninstall. Ad data: Google's controls (advertising ID reset/delete, <https://policies.google.com/technologies/ads>).
 - **Data collection is required or optional?** Ads data collection is subject to the UMP consent where applicable.
 
+## 8. Smallest APK, size analysis and start-up timing
+
+> These numbers have **not** been measured yet: the environment that prepared this configuration had no Flutter/Android SDK. Run the commands below (or the Codemagic workflows) and record the results.
+
+**Size settings already in the project:** R8 minify + resource shrinking (`isMinifyEnabled`, `isShrinkResources`), keep rules only for `com.clipsave.app.**` and the `google_mobile_ads` plugin (`proguard-rules.pro`), English-only resources (`androidResources.localeFilters`), uncompressed page-aligned native libs (`useLegacyPackaging = false`), excluded `META-INF/*.version`, `*.kotlin_module`, `DebugProbesKt.bin`; when building with `--target-platform android-arm64` the APK is filtered to `arm64-v8a`. No bundled fonts (system font; Material icons are tree-shaken), `assets/logo/*` is **not** a Flutter asset, no Firebase/analytics SDK.
+
+```bash
+# Release APK, arm64 only (Codemagic: copybox-release-apk)
+flutter build apk --release --target-platform android-arm64 \
+  --split-debug-info=build/symbols --obfuscate --tree-shake-icons
+du -h build/app/outputs/flutter-apk/app-release.apk
+
+# Play Store bundle, all ABIs (Codemagic: copybox-release-aab)
+flutter build appbundle --release --split-debug-info=build/symbols --obfuscate
+du -h build/app/outputs/bundle/release/app-release.aab
+
+# What is big? (Codemagic: copybox-size-report). Run without --obfuscate/--split-debug-info.
+flutter build apk --release --target-platform android-arm64 --analyze-size
+#   prints a breakdown (lib/arm64-v8a/libapp.so = your Dart code, libflutter.so = engine,
+#   classes.dex = Java/Kotlin incl. ads SDK, res/, assets/) and writes a JSON you can open with:
+dart devtools   # then "App Size Tool" → load the apk-code-size-analysis_*.json
+```
+
+Keep `build/symbols/` and `build/app/outputs/mapping/release/mapping.txt` from each release: you need them to read obfuscated stack traces (`flutter symbolize -i <trace> -d build/symbols/app.android-arm64.symbols`).
+
+**arm64-only APK:** it does **not** install on old 32-bit-only phones. For those, build `flutter build apk --release --split-per-abi` (one APK per ABI) or ship the AAB, which Play splits per device.
+
+**Signing:** without `android/key.properties`, release builds are signed with the **debug key** (marked TODO in `build.gradle.kts`). That is fine for testing a sideloaded APK; the Play Store requires your own upload keystore (section 2).
+
+**Measuring start-up** (always on a release or profile build; debug builds are slow by design):
+
+```bash
+# Cold start, release APK installed: TotalTime = time to first frame of MainActivity
+adb shell am force-stop com.clipsave.app
+adb shell am start -S -W -n com.clipsave.app/.MainActivity
+#   repeat 5x and take the median of "TotalTime"
+
+# Profile build with a start-up trace (writes build/start_up_info.json)
+flutter run --profile --trace-startup
+#   then open DevTools (Performance) from the printed URL for frame timings
+```
+
+Expected flow: one pink screen → in-app splash for 1.5–3 s (it leaves as soon as settings and the database are ready) → History. Ads consent and the banner load in the background and never delay this.
+
 ## Troubleshooting
 
 | Problem | Fix |

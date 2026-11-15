@@ -186,6 +186,37 @@ for f in list(root.glob('lib/**/*.dart')) + list(root.glob('android/app/src/main
     if f.exists() and 'Save clipboard' in f.read_text():
         errors.append(f'{f}: still mentions "Save clipboard" (replaced by New clip)')
 
+# ---- APK size guards ---------------------------------------------------------
+pub = (root / 'pubspec.yaml').read_text()
+flutter_section = pub.split('\nflutter:\n', 1)[1] if '\nflutter:\n' in pub else ''
+if re.search(r'^\s+assets:', flutter_section, re.M) or 'assets/logo' in flutter_section:
+    errors.append('pubspec.yaml must not register assets (assets/logo/* are design files, not app assets)')
+if re.search(r'^\s+fonts:', flutter_section, re.M):
+    errors.append('pubspec.yaml must not bundle fonts (system font only)')
+for banned in ('firebase', 'analytics', 'google_fonts', 'cupertino_icons'):
+    if re.search(rf'^\s+{banned}\w*:', pub, re.M):
+        errors.append(f'pubspec.yaml: unexpected dependency {banned}')
+gradle = (root / 'android/app/build.gradle.kts').read_text()
+for needle in ('isMinifyEnabled = true', 'isShrinkResources = true', 'useLegacyPackaging = false',
+               'localeFilters += "en"', 'abiFilters += "arm64-v8a"', 'DebugProbesKt.bin'):
+    if needle not in gradle:
+        errors.append(f'build.gradle.kts: missing size setting {needle!r}')
+rules = (root / 'android/app/proguard-rules.pro').read_text()
+for keep in ('-keep class com.clipsave.app.** { *; }', '-keep class io.flutter.plugins.googlemobileads.** { *; }'):
+    if keep not in rules:
+        errors.append(f'proguard-rules.pro: missing {keep}')
+cm = (root / 'codemagic.yaml').read_text()
+for wf, flags in (('clipsave-android:', ['flutter build apk --debug']),
+                  ('copybox-release-apk:', ['--target-platform android-arm64', '--split-debug-info=build/symbols', '--obfuscate', '--tree-shake-icons']),
+                  ('copybox-release-aab:', ['flutter build appbundle --release', '--split-debug-info=build/symbols', '--obfuscate'])):
+    if wf not in cm:
+        errors.append(f'codemagic.yaml: missing workflow {wf}')
+    else:
+        block = cm.split(wf, 1)[1].split('\n  copybox-', 1)[0]
+        for f in flags:
+            if f not in block:
+                errors.append(f'codemagic.yaml {wf} missing {f}')
+
 ml = re.search(r'maxClipLength = ([\d_]+)', (root / 'lib/core/constants.dart').read_text()).group(1)
 kl = re.search(r'MAX_CLIP_LENGTH = ([\d_]+)', (root / 'android/app/src/main/kotlin/com/clipsave/app/ClipReader.kt').read_text()).group(1)
 if ml.replace('_', '') != kl.replace('_', ''):
