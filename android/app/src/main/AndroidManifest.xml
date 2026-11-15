@@ -1,8 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!--
-        ClipSave requests NO runtime permissions and NO internet access in release builds.
-        Clipboard reads happen only while one of ClipSave's own activities has focus,
+        Copy Box requests NO runtime permissions and NO internet access in release builds.
+        Clipboard reads happen only while one of Copy Box's own activities has focus,
         as Android 10+ requires.
     -->
 

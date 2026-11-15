@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Honest explanation of Android's clipboard rules and ClipSave's alternatives.
+/// Honest explanation of Android's clipboard rules and Copy Box's alternatives.
 class CaptureGuideScreen extends StatelessWidget {
   const CaptureGuideScreen({super.key});
 
@@ -18,16 +18,16 @@ class CaptureGuideScreen extends StatelessWidget {
                 'Since Android 10, apps can only read the clipboard while they are '
                 'on screen and focused (keyboards are the one exception). No normal '
                 'app can silently watch everything you copy in the background, and '
-                'ClipSave does not try to get around this. It uses no accessibility '
+                'Copy Box does not try to get around this. It uses no accessibility '
                 'service and works with any keyboard.',
           ),
           _Section(
             icon: Icons.auto_mode_outlined,
-            title: '1. Auto-save when you open ClipSave',
+            title: '1. Auto-save when you open Copy Box',
             body:
-                'Copy text anywhere, then switch to ClipSave. New clipboard text is '
+                'Copy text anywhere, then switch to Copy Box. New clipboard text is '
                 'saved automatically. On Android 12 and newer you may see a short '
-                '"ClipSave pasted from your clipboard" notice; that is Android '
+                '"Copy Box pasted from your clipboard" notice; that is Android '
                 'showing you the read. You can turn this off in Settings.',
           ),
           _Section(
@@ -36,24 +36,24 @@ class CaptureGuideScreen extends StatelessWidget {
             body:
                 'Add the "Save clipboard" tile (Settings > Add Quick Settings tile, '
                 'or swipe down twice > Edit). After copying, pull down Quick '
-                'Settings and tap the tile. ClipSave opens an invisible window for '
+                'Settings and tap the tile. Copy Box opens an invisible window for '
                 'a moment, reads the clipboard and closes. The toast says "Sent to '
-                'ClipSave"; the text is checked and added to your history the next '
+                'Copy Box"; the text is checked and added to your history the next '
                 'time you open the app. If the phone is locked, you are asked to '
                 'unlock first.',
           ),
           _Section(
             icon: Icons.text_fields_rounded,
-            title: '3. "Save to ClipSave" in the text menu',
+            title: '3. "Save to Copy Box" in the text menu',
             body:
                 'Select text in any app, open the ⋮ menu in the selection toolbar '
-                'and choose "Save to ClipSave". This does not use the clipboard at '
+                'and choose "Save to Copy Box". This does not use the clipboard at '
                 'all. Some apps do not show this menu.',
           ),
           _Section(
             icon: Icons.share_outlined,
-            title: '4. Share to ClipSave',
-            body: 'Use Share in any app and pick "Save to ClipSave".',
+            title: '4. Share to Copy Box',
+            body: 'Use Share in any app and pick "Save to Copy Box".',
           ),
           _Section(
             icon: Icons.content_paste_go_rounded,
@@ -73,7 +73,7 @@ class CaptureGuideScreen extends StatelessWidget {
                 'Skipped items are kept in memory for two minutes only, so you can tap '
                 '"Save anyway" if you really want them. "Save clipboard" always asks '
                 'before saving something that looks sensitive. When you copy a clip '
-                'like that back out of ClipSave, it is marked sensitive so Android 13+ '
+                'like that back out of Copy Box, it is marked sensitive so Android 13+ '
                 'hides it in the copy preview.',
           ),
         ],

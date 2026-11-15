@@ -2,7 +2,7 @@
 class AppInfo {
   AppInfo._();
 
-  static const String name = 'ClipSave';
+  static const String name = 'Copy Box';
   static const String version = '1.0.0';
 
   /// Clips longer than this are refused, to keep the database small and fast.

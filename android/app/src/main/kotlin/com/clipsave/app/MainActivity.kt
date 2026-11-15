@@ -19,9 +19,9 @@ import io.flutter.plugin.common.MethodChannel
  *   sdkInt        -> Int
  *
  * Event channel "com.clipsave.app/clipboard_events":
- *   Emits the clipboard when ClipSave gains focus or the clip changes while
- *   ClipSave is in the foreground. Flutter only listens while the user has
- *   "Auto-save when ClipSave opens" enabled, so no read happens otherwise.
+ *   Emits the clipboard when Copy Box gains focus or the clip changes while
+ *   Copy Box is in the foreground. Flutter only listens while the user has
+ *   "Auto-save when Copy Box opens" enabled, so no read happens otherwise.
  */
 class MainActivity : FlutterActivity() {
 

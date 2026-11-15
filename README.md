@@ -1,29 +1,29 @@
-# ClipSave
+# Copy Box
 
 A privacy-first clipboard manager for Android, built with Flutter, with native Kotlin capture components.
 
-ClipSave keeps a searchable history of the text you copy. You can add favourites, put clips in folders, browse automatic categories (links, emails, phones, numbers, text) and copy any clip back with one tap. Everything stays on the device: release builds have **no INTERNET permission**, and backup and device transfer are disabled.
+Copy Box keeps a searchable history of the text you copy. You can add favourites, put clips in folders, browse automatic categories (links, emails, phones, numbers, text) and copy any clip back with one tap. Everything stays on the device: release builds have **no INTERNET permission**, and backup and device transfer are disabled.
 
 ---
 
-## What Android allows, and how ClipSave works within it
+## What Android allows, and how Copy Box works within it
 
-Since **Android 10**, an app can read the clipboard **only while it is in the foreground with input focus**. The one exception is the user's default keyboard (IME). No regular app can silently log everything you copy in the background. ClipSave **does not** get around this: it uses no Accessibility Service and needs no keyboard change.
+Since **Android 10**, an app can read the clipboard **only while it is in the foreground with input focus**. The one exception is the user's default keyboard (IME). No regular app can silently log everything you copy in the background. Copy Box **does not** get around this: it uses no Accessibility Service and needs no keyboard change.
 
-ClipSave captures text in five compliant ways:
+Copy Box captures text in five compliant ways:
 
 | # | Method | How it works | Reads clipboard? |
 |---|--------|--------------|------------------|
-| 1 | **Auto-save when you open ClipSave** | When ClipSave gains focus, `MainActivity` checks `primaryClipDescription.timestamp`. Only if the clip changed does it read the text and send it to Flutter. | Yes, only while focused |
+| 1 | **Auto-save when you open Copy Box** | When Copy Box gains focus, `MainActivity` checks `primaryClipDescription.timestamp`. Only if the clip changed does it read the text and send it to Flutter. | Yes, only while focused |
 | 2 | **Quick Settings tile "Save clipboard"** | The tile opens the invisible `ClipboardCaptureActivity`, which waits for window focus, reads once (retrying once after 200 ms), queues the text and closes. | Yes, during a user tap |
-| 3 | **Text-selection menu "Save to ClipSave"** | `ACTION_PROCESS_TEXT` delivers the selected text to `CaptureActivity`. | No |
-| 4 | **Share sheet "Save to ClipSave"** | `ACTION_SEND text/plain` to `CaptureActivity`. | No |
+| 3 | **Text-selection menu "Save to Copy Box"** | `ACTION_PROCESS_TEXT` delivers the selected text to `CaptureActivity`. | No |
+| 4 | **Share sheet "Save to Copy Box"** | `ACTION_SEND text/plain` to `CaptureActivity`. | No |
 | 5 | **Manual** | The "Save clipboard" button, or the editor (type or paste). | Yes, on button tap |
 
 Things to know:
 
-- On Android 12+, the system shows "ClipSave pasted from your clipboard" whenever the app reads another app's clip. ClipSave checks the timestamp first, so the notice appears only when there is something new.
-- Turning off **Auto-save when ClipSave opens** cancels the Flutter event-channel subscription. Native code then never reads the clipboard on focus.
+- On Android 12+, the system shows "Copy Box pasted from your clipboard" whenever the app reads another app's clip. Copy Box checks the timestamp first, so the notice appears only when there is something new.
+- Turning off **Auto-save when Copy Box opens** cancels the Flutter event-channel subscription. Native code then never reads the clipboard on focus.
 
 ### Sensitive data: one gate for every automatic path
 
@@ -38,13 +38,13 @@ Anything stored without the user seeing it first passes through `ClipsController
 - **Skipped auto-save items** stay on the clipboard. A snackbar explains why, and the user can tap "Save clipboard".
 - **"Save clipboard"** always asks before saving anything that looks sensitive, whatever the setting.
 - **Typing in the editor** is an explicit action and is not filtered.
-- **Copying back:** when a clip looks sensitive, ClipSave sets `EXTRA_IS_SENSITIVE` on the copy (native `copyText`). Android 13+ then hides it in the copy preview, and ClipSave's own auto-save ignores it.
+- **Copying back:** when a clip looks sensitive, Copy Box sets `EXTRA_IS_SENSITIVE` on the copy (native `copyText`). Android 13+ then hides it in the copy preview, and Copy Box's own auto-save ignores it.
 - **Size cap:** native code rejects text over 100,000 characters before it reaches the queue. This protects the exported share/selection activity from oversized input. The Dart and Kotlin limits are checked to match.
 - `tool/check_structure.py` enforces this gate. It fails if `_importInbox` or `_onAutoCaptured` can store text before calling `_autoFilterReason`, or if any other method calls `saveText`.
 
-Because heuristic filtering happens in Flutter, native toasts for tile, share and selection say **"Sent to ClipSave"**, not "Saved".
+Because heuristic filtering happens in Flutter, native toasts for tile, share and selection say **"Sent to Copy Box"**, not "Saved".
 
-**Known residual risk:** until ClipSave next opens, text from the tile, share or selection waits in the app-private inbox (SharedPreferences). That storage is excluded from backup and device transfer, and the item is filtered and removed from the queue on the next launch or resume. The text is not encrypted at rest. A rooted device or physical forensic access could read it during that window.
+**Known residual risk:** until Copy Box next opens, text from the tile, share or selection waits in the app-private inbox (SharedPreferences). That storage is excluded from backup and device transfer, and the item is filtered and removed from the queue on the next launch or resume. The text is not encrypted at rest. A rooted device or physical forensic access could read it during that window.
 
 ---
 
@@ -147,20 +147,20 @@ flutter run
 
 | Phase | Steps | Expected |
 |-------|-------|----------|
-| Auto-capture | Copy text in Chrome, switch to ClipSave | Clip appears, "Saved from clipboard" |
+| Auto-capture | Copy text in Chrome, switch to Copy Box | Clip appears, "Saved from clipboard" |
 | No repeat | Leave and return without copying anything new | No duplicate, no new paste notice |
 | Delete stays deleted | Delete that clip, leave and come back | It does not reappear |
-| Tile | Settings → Add Quick Settings tile. Copy in another app, tap the tile | Toast "Sent to ClipSave". Open ClipSave: "Saved 1 item from quick tile" |
+| Tile | Settings → Add Quick Settings tile. Copy in another app, tap the tile | Toast "Sent to Copy Box". Open Copy Box: "Saved 1 item from quick tile" |
 | Tile focus (Android 10, 12, 13, 14, 15+) | Tap the tile from home, from inside another app, and from the lock screen | Shade collapses, no visible window, toast appears. On the lock screen it asks to unlock first. Never "Could not read the clipboard" on a stock ROM |
-| Tile while ClipSave is open | Open ClipSave, pull the shade, tap the tile | One clip saved, no duplicate |
-| Selection | Select text in an app → ⋮ → Save to ClipSave | Toast, then the clip appears on next open |
-| Share | Share text → Save to ClipSave | Same as above |
-| Sensitive, auto-save | Copy `482913`, open ClipSave | Not saved. Snackbar explains. "Save clipboard" asks for confirmation |
+| Tile while Copy Box is open | Open Copy Box, pull the shade, tap the tile | One clip saved, no duplicate |
+| Selection | Select text in an app → ⋮ → Save to Copy Box | Toast, then the clip appears on next open |
+| Share | Share text → Save to Copy Box | Same as above |
+| Sensitive, auto-save | Copy `482913`, open Copy Box | Not saved. Snackbar explains. "Save clipboard" asks for confirmation |
 | Sensitive, tile/share/selection | Copy `P@ssw0rd!` and tap the tile, or share `Your code is 739201` | Toast "Sent". On opening: "Not saved…" with **Save anyway**. Ignore it, reopen after 2 minutes: nothing saved |
 | Copy back a secret | Save `P@ssw0rd!` manually, tap it (Android 13+) | System copy preview hides the text |
 | Oversized share | Share >100,000 characters | Toast "Text is too long", nothing queued |
 | Password manager | Copy a password from a manager that sets `IS_SENSITIVE` | Never auto-saved. The tile shows "Not saved…" |
-| Auto off | Turn off Auto-save, copy, open ClipSave | No read and no Android paste notice |
+| Auto off | Turn off Auto-save, copy, open Copy Box | No read and no Android paste notice |
 | Copy back | Tap a clip | Clipboard updated (Android 13+ shows its own confirmation) |
 | Search / filters / folders / favourites | Use each | List updates. A deleted folder's clips remain |
 | Swipe delete | Swipe left, tap Undo | Clip restored |

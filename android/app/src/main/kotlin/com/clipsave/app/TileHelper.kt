@@ -6,7 +6,7 @@ import android.content.ComponentName
 import android.graphics.drawable.Icon
 import android.os.Build
 
-/** Asks the system to add the ClipSave tile to Quick Settings (Android 13+). */
+/** Asks the system to add the Copy Box tile to Quick Settings (Android 13+). */
 object TileHelper {
 
     /**

@@ -22,7 +22,7 @@ class HistoryScreen extends StatelessWidget {
         context.select<SettingsController, bool>((s) => s.guideDismissed);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ClipSave'),
+        title: const Text('Copy Box'),
         actions: [
           IconButton(
             tooltip: 'New clip',

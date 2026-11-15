@@ -41,8 +41,8 @@ class ClipboardBridge {
   static const EventChannel _events =
       EventChannel('com.clipsave.app/clipboard_events');
 
-  /// Clipboard contents delivered when ClipSave gains focus or the clip changes
-  /// while ClipSave is in the foreground. Listening enables native reads;
+  /// Clipboard contents delivered when Copy Box gains focus or the clip changes
+  /// while Copy Box is in the foreground. Listening enables native reads;
   /// cancelling the subscription disables them.
   Stream<CapturedClip> clipboardChanges() => _events
       .receiveBroadcastStream()
@@ -117,7 +117,7 @@ class ClipboardBridge {
 
   /// Copies to the clipboard. With [sensitive] the native side sets
   /// EXTRA_IS_SENSITIVE so Android 13+ hides the preview and clipboard tools
-  /// (including ClipSave's own auto-capture) skip it.
+  /// (including Copy Box's own auto-capture) skip it.
   Future<void> copy(String text, {bool sensitive = false}) async {
     try {
       await _methods.invokeMethod<void>(

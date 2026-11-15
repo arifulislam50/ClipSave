@@ -1,5 +1,5 @@
 name: clipsave
-description: ClipSave - a privacy-first clipboard manager for Android.
+description: Copy Box - a privacy-first clipboard manager for Android.
 publish_to: 'none'
 
 # versionName+versionCode. Bump the number after "+" for every Play Store upload.

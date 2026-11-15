@@ -96,9 +96,9 @@ class SettingsScreen extends StatelessWidget {
           header('Capture'),
           SwitchListTile(
             secondary: const Icon(Icons.auto_mode_outlined),
-            title: const Text('Auto-save when ClipSave opens'),
+            title: const Text('Auto-save when Copy Box opens'),
             subtitle: const Text(
-                'Saves new clipboard text whenever you open or return to ClipSave'),
+                'Saves new clipboard text whenever you open or return to Copy Box'),
             value: settings.autoCapture,
             onChanged: settings.setAutoCapture,
           ),

@@ -7,7 +7,7 @@ class PrivacyScreen extends StatelessWidget {
   static const List<(String, String)> _sections = [
     (
       'Summary',
-      'ClipSave stores the text you choose to save only on your device. It has '
+      'Copy Box stores the text you choose to save only on your device. It has '
           'no accounts, no ads, no analytics and no internet permission, so your '
           'clips cannot be sent anywhere by the app.'
     ),
@@ -20,10 +20,10 @@ class PrivacyScreen extends StatelessWidget {
     ),
     (
       'When the clipboard is read',
-      'Only while ClipSave is open and focused (if auto-save is on), when you tap '
+      'Only while Copy Box is open and focused (if auto-save is on), when you tap '
           '"Save clipboard", or when you tap the Quick Settings tile. Share and '
           'text-selection saves receive only the text you sent. Text from the tile, '
-          'Share or text selection waits in a small private queue until ClipSave '
+          'Share or text selection waits in a small private queue until Copy Box '
           'next opens and checks it.'
     ),
     (
@@ -37,7 +37,7 @@ class PrivacyScreen extends StatelessWidget {
     (
       'Backups and sharing',
       'Android cloud backup and device-to-device transfer are disabled for '
-          'ClipSave. No data is shared with third parties.'
+          'Copy Box. No data is shared with third parties.'
     ),
     (
       'Deleting your data',

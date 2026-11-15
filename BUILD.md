@@ -1,4 +1,4 @@
-# Building ClipSave for release
+# Building Copy Box for release
 
 ## 1. Check your toolchain
 
@@ -70,11 +70,11 @@ Install: `adb install -r build/app/outputs/flutter-apk/app-release.apk`
 3. Play Console → Create app → upload the `.aab` to **Internal testing** first. Enrol in **Play App Signing** (the default).
 4. Fill in the store listing:
    - **Privacy policy URL:** host `PRIVACY_POLICY.md` publicly (for example GitHub Pages) and paste the link.
-   - **Data safety:** ClipSave collects **no** data and shares **no** data. Data is stored only on the device and is never transmitted. Users can delete it in the app.
+   - **Data safety:** Copy Box collects **no** data and shares **no** data. Data is stored only on the device and is never transmitted. Users can delete it in the app.
    - **App content → Permissions:** none are requested. The Quick Settings tile uses a system binding permission, not a user permission.
    - **Target API:** 36 (set in `build.gradle.kts`). Raise it when Google raises the requirement.
 5. Suggested short description: "Private clipboard history. Save, search, favourite and organise copied text, all offline."
-   In the full description, state the Android limitation honestly. For example: "Android only lets apps read the clipboard while they're open. ClipSave saves when you open it, or with one tap from the Quick Settings tile, the text-selection menu or Share."
+   In the full description, state the Android limitation honestly. For example: "Android only lets apps read the clipboard while they're open. Copy Box saves when you open it, or with one tap from the Quick Settings tile, the text-selection menu or Share."
    Don't claim "automatically saves everything you copy in the background". That would be inaccurate, and it risks a policy rejection.
 
 ## 5. Verify release permissions and components
@@ -117,6 +117,6 @@ If anything else appears, find its source in `build/app/outputs/logs/manifest-me
 | "Gradle / AGP / KGP version is lower than Flutter's minimum" | Raise the version it names. Gradle goes in `gradle-wrapper.properties`; AGP and KGP go in `android/settings.gradle.kts`. Keep AGP's minimum Gradle in mind (AGP 9.1 → 9.3.1, 9.2 → 9.4.1, 9.3 → 9.5.0) |
 | "Unsupported class file major version" / Gradle won't start | The build machine's JDK is older than 17. On Codemagic, add `java: 17` (or 21) under `environment` |
 | R8 "Missing classes" warning | Add the suggested `-dontwarn` lines from `build/app/outputs/mapping/release/missing_rules.txt` to `proguard-rules.pro` |
-| The tile toast says "Could not read the clipboard" | Focus didn't arrive within 2.5 s (seen on some OEM ROMs). Tap the tile again, or open ClipSave and use "Save clipboard". Please report the device model |
+| The tile toast says "Could not read the clipboard" | Focus didn't arrive within 2.5 s (seen on some OEM ROMs). Tap the tile again, or open Copy Box and use "Save clipboard". Please report the device model |
 | The tile does nothing on Android 15+ | Background-activity-launch rules may have blocked it. Check `adb logcat \| grep -i "Background activity launch blocked"`. The tile already opts in through `ActivityOptions`; if it is still blocked, report the Android build |
 | Kotlin warns about `MODE_BACKGROUND_ACTIVITY_START_ALLOWED` being deprecated (compileSdk 36+) | Expected and suppressed. It is the opt-in that works on API 34 and 35 |

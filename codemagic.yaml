@@ -1,6 +1,6 @@
 workflows:
   clipsave-android:
-    name: ClipSave Android APK
+    name: Copy Box Android APK
     max_build_duration: 120
     instance_type: mac_mini_m2
     environment:

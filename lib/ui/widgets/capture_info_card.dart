@@ -26,7 +26,7 @@ class CaptureInfoCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'How ClipSave captures text',
+                    'How Copy Box captures text',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         color: scheme.onSecondaryContainer),
                   ),
@@ -36,8 +36,8 @@ class CaptureInfoCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               'Android only lets apps read the clipboard while they are open. '
-              'ClipSave saves new copies when you open it. From other apps, use '
-              'the Quick Settings tile, "Save to ClipSave" in the text menu, or Share.',
+              'Copy Box saves new copies when you open it. From other apps, use '
+              'the Quick Settings tile, "Save to Copy Box" in the text menu, or Share.',
               style: TextStyle(color: scheme.onSecondaryContainer),
             ),
             Align(

@@ -115,7 +115,7 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
     } catch (_) {
       _loading = false;
       _notify();
-      _say(const AppMessage('Could not open clip history. Restart ClipSave to retry.'));
+      _say(const AppMessage('Could not open clip history. Restart Copy Box to retry.'));
       return; // Don't auto-capture into a database that failed to open.
     }
     _syncAutoCapture();
@@ -138,7 +138,7 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   /// Listening to the event channel is what enables native reads, so turning
-  /// auto-capture off really stops ClipSave from touching the clipboard.
+  /// auto-capture off really stops Copy Box from touching the clipboard.
   void _syncAutoCapture() {
     final wanted = _settings.autoCapture;
     if (wanted && _autoSub == null) {

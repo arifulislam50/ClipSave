@@ -30,7 +30,7 @@ class ClipActions {
         context,
         title: 'Save sensitive text?',
         message: '${outcome.reason!.explanation} '
-            'It will be stored unencrypted in ClipSave on this device. '
+            'It will be stored unencrypted in Copy Box on this device. '
             'Save it anyway?',
         confirmLabel: 'Save anyway',
       );

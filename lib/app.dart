@@ -10,8 +10,8 @@ import 'ui/root_shell.dart';
 final GlobalKey<ScaffoldMessengerState> rootMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
 
-class ClipSaveApp extends StatelessWidget {
-  const ClipSaveApp({super.key});
+class CopyBoxApp extends StatelessWidget {
+  const CopyBoxApp({super.key});
 
   @override
   Widget build(BuildContext context) {

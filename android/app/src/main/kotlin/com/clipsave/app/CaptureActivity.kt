@@ -6,9 +6,9 @@ import android.os.Bundle
 import android.widget.Toast
 
 /**
- * Invisible activity that receives text the user explicitly sends to ClipSave:
+ * Invisible activity that receives text the user explicitly sends to Copy Box:
  *  - ACTION_SEND (share sheet, text/plain)
- *  - ACTION_PROCESS_TEXT ("Save to ClipSave" in any app's text-selection menu)
+ *  - ACTION_PROCESS_TEXT ("Save to Copy Box" in any app's text-selection menu)
  *
  * These do not read the clipboard, so they work with any keyboard and on every
  * Android version. Text is only queued here; Flutter applies the sensitive-text

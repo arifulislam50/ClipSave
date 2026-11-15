@@ -27,7 +27,7 @@ Future<void> main() async {
         ChangeNotifierProvider<SettingsController>.value(value: settings),
         ChangeNotifierProvider<ClipsController>.value(value: clips),
       ],
-      child: const ClipSaveApp(),
+      child: const CopyBoxApp(),
     ),
   );
 

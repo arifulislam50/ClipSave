@@ -1,4 +1,4 @@
-"""Offline verification for ClipSave (no Flutter SDK needed).
+"""Offline verification for Copy Box (no Flutter SDK needed).
 
 1. Extracts every RegExp from the Dart detector/classifier sources, re-implements
    the same decision logic in Python, and runs the test cases parsed from

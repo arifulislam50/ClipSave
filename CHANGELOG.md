@@ -20,14 +20,14 @@ Fixes the Codemagic failure "Gradle version (8.12.0) is lower than Flutter's min
 - Skipped inbox items are held in memory only, for 2 minutes, behind a "Save anyway" snackbar action.
 - Skipped auto-save clips now show a message instead of being dropped silently.
 - "Save clipboard" always asks before storing sensitive-looking text, whatever the setting.
-- Copying a sensitive-looking clip out of ClipSave sets `EXTRA_IS_SENSITIVE` (new native `copyText`).
+- Copying a sensitive-looking clip out of Copy Box sets `EXTRA_IS_SENSITIVE` (new native `copyText`).
 - Native side rejects text over 100,000 characters before queueing it, so the exported share/selection activity can't be fed oversized input.
 - `tool/check_structure.py` enforces these invariants.
 
 ### Functionality
 - `CaptureActivity`: removed `val intent = intent` self-shadowing, a likely Kotlin compile error.
 - Tile: retries the read once after 200 ms if focus is still settling. Android 14+ `PendingIntent` gets the creator background-launch opt-in.
-- Tile, share and selection toasts now say "Sent to ClipSave", because the text is filtered later in Flutter.
+- Tile, share and selection toasts now say "Sent to Copy Box", because the text is filtered later in Flutter.
 - Folder ids are validated before every write. Previously, saving from the editor after the selected folder was deleted hit a foreign-key failure.
 - A failed database open is no longer cached forever. Init failure shows a message and disables auto-capture.
 - Snackbars support actions (`AppMessage`).
