@@ -180,6 +180,12 @@ if not py_cards or py_cards != dart_cards:
 if not py_lines or py_lines != dart_lines:
     errors.append('logo lines differ between generate_logo.py and app_logo.dart')
 
+# ---- "Save clipboard" is gone: New clip replaced it ---------------------------
+for f in list(root.glob('lib/**/*.dart')) + list(root.glob('android/app/src/main/**/*.xml')) + \
+        list(root.glob('android/app/src/main/**/*.kt')) + [root / n for n in ('README.md', 'PRIVACY_POLICY.md', 'BUILD.md')]:
+    if f.exists() and 'Save clipboard' in f.read_text():
+        errors.append(f'{f}: still mentions "Save clipboard" (replaced by New clip)')
+
 ml = re.search(r'maxClipLength = ([\d_]+)', (root / 'lib/core/constants.dart').read_text()).group(1)
 kl = re.search(r'MAX_CLIP_LENGTH = ([\d_]+)', (root / 'android/app/src/main/kotlin/com/clipsave/app/ClipReader.kt').read_text()).group(1)
 if ml.replace('_', '') != kl.replace('_', ''):

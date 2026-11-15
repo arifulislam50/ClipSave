@@ -17,10 +17,10 @@ Copy Box captures text in five compliant ways:
 | # | Method | How it works | Reads clipboard? |
 |---|--------|--------------|------------------|
 | 1 | **Auto-save when you open Copy Box** | When Copy Box gains focus, `MainActivity` checks `primaryClipDescription.timestamp`. Only if the clip changed does it read the text and send it to Flutter. | Yes, only while focused |
-| 2 | **Quick Settings tile "Save clipboard"** | The tile opens the invisible `ClipboardCaptureActivity`, which waits for window focus, reads once (retrying once after 200 ms), queues the text and closes. | Yes, during a user tap |
+| 2 | **Quick Settings tile "Save to Copy Box"** | The tile opens the invisible `ClipboardCaptureActivity`, which waits for window focus, reads once (retrying once after 200 ms), queues the text and closes. | Yes, during a user tap |
 | 3 | **Text-selection menu "Save to Copy Box"** | `ACTION_PROCESS_TEXT` delivers the selected text to `CaptureActivity`. | No |
 | 4 | **Share sheet "Save to Copy Box"** | `ACTION_SEND text/plain` to `CaptureActivity`. | No |
-| 5 | **Manual** | The "Save clipboard" button, or the editor (type or paste). | Yes, on button tap |
+| 5 | **New clip** | The "New clip" button opens the editor to type or paste text yourself. | No (any paste is your own keyboard action) |
 
 Things to know:
 
@@ -37,8 +37,8 @@ Anything stored without the user seeing it first passes through `ClipsController
 | `SensitiveDetector`: OTP, password, Luhn-valid card number, private key, known API-token formats | When **Skip passwords and codes** is on (the default) |
 
 - **Skipped inbox items** are held **in memory only** for 2 minutes. A snackbar offers **Save anyway**. Nothing is written to SQLite unless the user taps it.
-- **Skipped auto-save items** stay on the clipboard. A snackbar explains why, and the user can tap "Save clipboard".
-- **"Save clipboard"** always asks before saving anything that looks sensitive, whatever the setting.
+- **Skipped auto-save items** are held the same way (memory only, 2 minutes) with a **Save anyway** snackbar action.
+- Copy Box reads the clipboard **only** when it opens or returns to the foreground (if auto-save is on) and when the Quick Settings tile is used. There is no in-app "read the clipboard now" button.
 - **Typing in the editor** is an explicit action and is not filtered.
 - **Copying back:** when a clip looks sensitive, Copy Box sets `EXTRA_IS_SENSITIVE` on the copy (native `copyText`). Android 13+ then hides it in the copy preview, and Copy Box's own auto-save ignores it.
 - **Size cap:** native code rejects text over 100,000 characters before it reaches the queue. This protects the exported share/selection activity from oversized input. The Dart and Kotlin limits are checked to match.
@@ -166,7 +166,7 @@ flutter run
 | Tile while Copy Box is open | Open Copy Box, pull the shade, tap the tile | One clip saved, no duplicate |
 | Selection | Select text in an app → ⋮ → Save to Copy Box | Toast, then the clip appears on next open |
 | Share | Share text → Save to Copy Box | Same as above |
-| Sensitive, auto-save | Copy `482913`, open Copy Box | Not saved. Snackbar explains. "Save clipboard" asks for confirmation |
+| Sensitive, auto-save | Copy `482913`, open Copy Box | Not saved. Snackbar "Not saved…" with **Save anyway**; tapping it saves the code |
 | Sensitive, tile/share/selection | Copy `P@ssw0rd!` and tap the tile, or share `Your code is 739201` | Toast "Sent". On opening: "Not saved…" with **Save anyway**. Ignore it, reopen after 2 minutes: nothing saved |
 | Copy back a secret | Save `P@ssw0rd!` manually, tap it (Android 13+) | System copy preview hides the text |
 | Oversized share | Share >100,000 characters | Toast "Text is too long", nothing queued |
@@ -180,7 +180,7 @@ flutter run
 | Reduced motion | Enable "Remove animations", cold-start | Splash ~1 s, static bar, no fade |
 | Android 12+ system splash | Cold-start on Android 12+ (light and dark mode) | System splash is pink with white cards, then the Flutter splash |
 | Consent (EEA) | Use an EEA device/VPN or UMP debug geography | Google consent form before any ad; Settings shows "Privacy and ad choices", which re-opens it |
-| Banner placement | Open History, Folders, Settings, New clip | Test banner only on History and Folders, above the nav bar; FAB fully visible above it; no ad on Settings, editor, splash |
+| Banner placement | Open History, Folders, Settings, New clip | Test banner only on History and Folders, above the nav bar; "New clip" FAB fully visible above it; no ad on Settings, editor, splash |
 | Copy button | Tap the round copy button on a tile; repeat with a password-like clip on Android 13+ | Copies; system preview hides the sensitive one |
 | Themed icon | Android 13+, enable themed icons | Monochrome three-card icon |
 | Lock screen | Tap the tile while locked | Asks to unlock, then captures |

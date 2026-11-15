@@ -13,7 +13,7 @@ import io.flutter.plugin.common.MethodChannel
  * Hosts the Flutter UI and exposes the native clipboard bridge.
  *
  * Method channel  "com.clipsave.app/native":
- *   readClipboard -> Map?      (explicit read, used by the "Save clipboard" button)
+ *   readClipboard -> Map?      (explicit read; kept for ClipsController.captureClipboard)
  *   copyText(text, sensitive)  (copy back; sensitive clips get EXTRA_IS_SENSITIVE)
  *   drainInbox    -> List<Map> (items saved by tile/share/selection while UI was closed)
  *   requestAddTile -> String   (Android 13+ "add tile" system prompt)

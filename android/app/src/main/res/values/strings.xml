@@ -3,13 +3,13 @@
     <string name="app_name">Copy Box</string>
     <string name="share_target_label">Save to Copy Box</string>
     <string name="process_text_label">Save to Copy Box</string>
-    <string name="tile_label">Save clipboard</string>
+    <string name="tile_label">Save to Copy Box</string>
     <string name="tile_subtitle">Copy Box</string>
 
     <string name="capture_sent">Sent to Copy Box</string>
     <string name="capture_too_long">Text is too long for Copy Box</string>
     <string name="capture_empty">Clipboard is empty or not text</string>
     <string name="capture_sensitive_skipped">Not saved: the copying app marked this as sensitive</string>
-    <string name="capture_no_focus">Could not read the clipboard. Open Copy Box and tap Save clipboard.</string>
+    <string name="capture_no_focus">Could not read the clipboard. Tap the tile again, or open Copy Box to save it automatically.</string>
     <string name="capture_unsupported">Only text can be saved</string>
 </resources>

@@ -111,7 +111,7 @@ If anything else appears, find its source in `build/app/outputs/logs/manifest-me
 - [ ] Step 5 shows only INTERNET, ACCESS_NETWORK_STATE, AD_ID (plus the AndroidX signature permission) and no unexpected components
 - [ ] **AdMob IDs replaced:** `lib/core/ad_config.dart` and the `APPLICATION_ID` meta-data in `AndroidManifest.xml` contain your real IDs, not Google's test IDs (`ca-app-pub-3940256099942544…`). `tool/check_structure.py` checks that the two match.
 - [ ] The consent form appears for an EEA test user (UMP debug geography) and **Settings → Privacy and ad choices** re-opens it
-- [ ] Banner appears only on History and Folders, above the navigation bar, never covering the "Save clipboard" FAB
+- [ ] Banner appears only on History and Folders, above the navigation bar, never covering the "New clip" FAB
 - [ ] App icon looks right on the home screen, including themed icons on Android 13+
 - [ ] The privacy policy URL is reachable
 
@@ -140,6 +140,6 @@ Other answers:
 | "Gradle / AGP / KGP version is lower than Flutter's minimum" | Raise the version it names. Gradle goes in `gradle-wrapper.properties`; AGP and KGP go in `android/settings.gradle.kts`. Keep AGP's minimum Gradle in mind (AGP 9.1 → 9.3.1, 9.2 → 9.4.1, 9.3 → 9.5.0) |
 | "Unsupported class file major version" / Gradle won't start | The build machine's JDK is older than 17. On Codemagic, add `java: 17` (or 21) under `environment` |
 | R8 "Missing classes" warning | Add the suggested `-dontwarn` lines from `build/app/outputs/mapping/release/missing_rules.txt` to `proguard-rules.pro` |
-| The tile toast says "Could not read the clipboard" | Focus didn't arrive within 2.5 s (seen on some OEM ROMs). Tap the tile again, or open Copy Box and use "Save clipboard". Please report the device model |
+| The tile toast says "Could not read the clipboard" | Focus didn't arrive within 2.5 s (seen on some OEM ROMs). Tap the tile again, or open Copy Box (auto-save reads the clipboard when it opens). Please report the device model |
 | The tile does nothing on Android 15+ | Background-activity-launch rules may have blocked it. Check `adb logcat \| grep -i "Background activity launch blocked"`. The tile already opts in through `ActivityOptions`; if it is still blocked, report the Android build |
 | Kotlin warns about `MODE_BACKGROUND_ACTIVITY_START_ALLOWED` being deprecated (compileSdk 36+) | Expected and suppressed. It is the opt-in that works on API 34 and 35 |

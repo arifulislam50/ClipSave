@@ -1,9 +1,6 @@
-import 'dart:async';
-
 import 'package:clipsave/data/db/app_database.dart';
 import 'package:clipsave/data/repositories/clip_repository.dart';
 import 'package:clipsave/data/repositories/settings_repository.dart';
-import 'package:clipsave/platform/clipboard_bridge.dart';
 import 'package:clipsave/state/app_message.dart';
 import 'package:clipsave/state/clips_controller.dart';
 import 'package:clipsave/state/settings_controller.dart';
@@ -12,45 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-/// Stands in for the Kotlin side so capture paths can be tested on the host.
-class FakeBridge extends ClipboardBridge {
-  final StreamController<CapturedClip> events =
-      StreamController<CapturedClip>.broadcast();
-  List<CapturedClip> inbox = [];
-  CapturedClip? clipboard;
-  final List<(String, bool)> copies = [];
-
-  @override
-  Stream<CapturedClip> clipboardChanges() => events.stream;
-
-  @override
-  Future<List<CapturedClip>> drainInbox() async {
-    final out = inbox;
-    inbox = [];
-    return out;
-  }
-
-  @override
-  Future<CapturedClip?> readClipboard() async => clipboard;
-
-  @override
-  Future<void> copy(String text, {bool sensitive = false}) async =>
-      copies.add((text, sensitive));
-
-  @override
-  Future<int> sdkInt() async => 34;
-
-  @override
-  Future<TileRequestResult> requestAddTile() async => TileRequestResult.added;
-}
-
-CapturedClip clip(String text, {String source = 'tile', bool systemSensitive = false}) =>
-    CapturedClip(
-      text: text,
-      systemSensitive: systemSensitive,
-      source: source,
-      capturedAt: DateTime.now(),
-    );
+import 'helpers/fake_bridge.dart';
 
 Future<void> until(bool Function() condition) async {
   for (var i = 0; i < 200 && !condition(); i++) {
@@ -140,6 +99,18 @@ void main() {
     bridge.events.add(clip('buy milk', source: 'auto'));
     await until(() => saved().isNotEmpty);
     expect(saved(), ['buy milk']);
+  });
+
+  test('auto-save skip offers "Save anyway" and stores only on request', () async {
+    await start();
+    bridge.events.add(clip('482913', source: 'auto'));
+    await until(() => controller.heldSensitiveCount == 1);
+    final held = messages.lastWhere((m) => m.hasAction);
+    expect(held.actionLabel, 'Save anyway');
+    expect(saved(), isEmpty);
+    held.onAction!();
+    await until(() => saved().isNotEmpty);
+    expect(saved(), ['482913']);
   });
 
   test('manual save asks before storing sensitive text', () async {

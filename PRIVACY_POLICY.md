@@ -35,8 +35,9 @@ Copy Box displays a banner ad on the History and Folders screens. Ads are provid
 Android allows apps to read the clipboard only while they are open and focused. Copy Box reads the clipboard **only**:
 
 1. When you open or return to Copy Box, if "Auto-save when Copy Box opens" is on (it is on by default and can be turned off in Settings).
-2. When you tap **Save clipboard** in the app.
-3. When you tap the Copy Box **Quick Settings tile**.
+2. When you tap the Copy Box **Quick Settings tile** ("Save to Copy Box").
+
+If you paste text into **New clip** yourself, that is your own keyboard action; Copy Box saves only what you type or paste there.
 
 With **Share → Save to Copy Box** or **Save to Copy Box** in the text-selection menu, Copy Box receives only the text you sent. It does not read the clipboard in that case.
 

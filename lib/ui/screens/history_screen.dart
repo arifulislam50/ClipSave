@@ -15,6 +15,29 @@ import 'capture_guide_screen.dart';
 
 enum _HistoryMenu { clear, guide }
 
+const String emptyMessageAutoSaveOn =
+    'Copy something, then open Copy Box and it is saved automatically. '
+    'Or tap New clip to type your own text. Saved text stays on this device.';
+const String emptyMessageAutoSaveOff =
+    'Auto-save is off. Turn it on in Settings, use the Quick Settings tile, '
+    'Share or the text menu, or tap New clip to type your own text.';
+
+/// Extended "New clip" FAB: 56px high, radius 16, #FD79A8 with #2D3436
+/// (colours and shape come from the theme's floatingActionButtonTheme).
+class NewClipFab extends StatelessWidget {
+  const NewClipFab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton.extended(
+      tooltip: 'New clip',
+      onPressed: () => ClipActions.openEditor(context),
+      icon: const Icon(Icons.add_rounded),
+      label: const Text('New clip', style: TextStyle(fontWeight: FontWeight.w600)),
+    );
+  }
+}
+
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
@@ -34,11 +57,6 @@ class HistoryScreen extends StatelessWidget {
           ],
         ),
         actions: [
-          IconButton(
-            tooltip: 'New clip',
-            icon: const Icon(Icons.edit_note_rounded),
-            onPressed: () => ClipActions.openEditor(context),
-          ),
           PopupMenuButton<_HistoryMenu>(
             tooltip: 'More options',
             onSelected: (value) {
@@ -74,11 +92,9 @@ class HistoryScreen extends StatelessWidget {
           const Expanded(child: _ClipList()),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => ClipActions.saveClipboard(context),
-        icon: const Icon(Icons.content_paste_rounded),
-        label: const Text('Save clipboard', style: TextStyle(fontWeight: FontWeight.w600)),
-      ),
+      // "New clip" opens the editor. It lives in this tab's Scaffold, which ends
+      // above the ad banner (RootShell), so the banner can never cover it.
+      floatingActionButton: const NewClipFab(),
     );
   }
 }
@@ -169,16 +185,16 @@ class _ClipList extends StatelessWidget {
           ],
         );
       }
+      final autoSave = context.select<SettingsController, bool>((s) => s.autoCapture);
       return EmptyState(
         illustration: const AppLogo(size: 112, semanticLabel: null),
         title: 'Nothing saved yet',
-        message: 'Copy text in any app, then come back here or tap '
-            '"Save clipboard". Your clips are stored on this device.',
+        message: autoSave ? emptyMessageAutoSaveOn : emptyMessageAutoSaveOff,
         actions: [
           FilledButton.icon(
-            onPressed: () => ClipActions.saveClipboard(context),
-            icon: const Icon(Icons.content_paste_rounded),
-            label: const Text('Save clipboard'),
+            onPressed: () => ClipActions.openEditor(context),
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('New clip'),
           ),
           const SizedBox(height: 4),
           TextButton(

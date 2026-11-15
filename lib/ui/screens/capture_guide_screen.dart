@@ -34,7 +34,7 @@ class CaptureGuideScreen extends StatelessWidget {
             icon: Icons.grid_view_rounded,
             title: '2. Quick Settings tile (fastest)',
             body:
-                'Add the "Save clipboard" tile (Settings > Add Quick Settings tile, '
+                'Add the "Save to Copy Box" tile (Settings > Add Quick Settings tile, '
                 'or swipe down twice > Edit). After copying, pull down Quick '
                 'Settings and tap the tile. Copy Box opens an invisible window for '
                 'a moment, reads the clipboard and closes. The toast says "Sent to '
@@ -56,11 +56,12 @@ class CaptureGuideScreen extends StatelessWidget {
             body: 'Use Share in any app and pick "Save to Copy Box".',
           ),
           _Section(
-            icon: Icons.content_paste_go_rounded,
-            title: '5. Manual save',
+            icon: Icons.add_rounded,
+            title: '5. New clip',
             body:
-                'Tap "Save clipboard" on the History screen, or use the ✎ button to '
-                'type or paste text yourself.',
+                'Tap "New clip" on the History screen to type or paste text yourself. '
+                'Copy Box itself only reads the clipboard when it opens (if auto-save '
+                'is on) or when you use the Quick Settings tile.',
           ),
           _Section(
             icon: Icons.shield_outlined,
@@ -71,8 +72,7 @@ class CaptureGuideScreen extends StatelessWidget {
                 'on (the default), auto-save, the tile, Share and text selection all '
                 'skip text that looks like a password, OTP, card number or access key. '
                 'Skipped items are kept in memory for two minutes only, so you can tap '
-                '"Save anyway" if you really want them. "Save clipboard" always asks '
-                'before saving something that looks sensitive. When you copy a clip '
+                '"Save anyway" if you really want them. When you copy a clip '
                 'like that back out of Copy Box, it is marked sensitive so Android 13+ '
                 'hides it in the copy preview.',
           ),

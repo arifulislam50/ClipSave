@@ -16,7 +16,9 @@ import 'settings_controller.dart';
 
 enum CaptureKind { saved, alreadySaved, empty, tooLong, sensitive }
 
-/// Outcome of the manual "Save clipboard" action.
+/// Outcome of [ClipsController.captureClipboard] (an explicit, confirmed
+/// clipboard read). No button calls it since the History FAB became
+/// "New clip"; kept, with its tests, for a possible future entry point.
 class CaptureOutcome {
   const CaptureOutcome(this.kind, {this.reason});
   final CaptureKind kind;
@@ -206,11 +208,9 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
     final text = clip.text;
     if (text.trim().isEmpty || text == _lastSelfCopy) return;
     if (text.length > AppInfo.maxClipLength) return;
-    final reason = _autoFilterReason(clip);
-    if (reason != null) {
-      // Still on the clipboard; the user can save it deliberately.
-      _say(AppMessage('Not saved automatically. ${reason.explanation} '
-          'Tap "Save clipboard" to keep it.'));
+    if (_autoFilterReason(clip) != null) {
+      // Held in memory only, with a "Save anyway" snackbar action.
+      _holdSensitive([clip]);
       return;
     }
     final result = await _store(text, source: ClipSources.auto);
@@ -219,8 +219,9 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  /// Manual "Save clipboard". With [force] the sensitivity check is skipped
-  /// after the user confirmed.
+  /// Explicit clipboard read. With [force] the sensitivity check is skipped
+  /// after the user confirmed. No UI calls this today: the clipboard is read
+  /// only when the app opens (auto-save) or from the Quick Settings tile.
   Future<CaptureOutcome> captureClipboard({bool force = false}) async {
     final clip = await _bridge.readClipboard();
     if (clip == null || clip.text.trim().isEmpty) {
@@ -281,8 +282,8 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  /// Keeps skipped inbox items in memory (never on disk) briefly, so the user
-  /// can deliberately save them from the snackbar.
+  /// Keeps skipped items (auto-save or inbox) in memory, never on disk,
+  /// briefly, so the user can deliberately save them from the snackbar.
   void _holdSensitive(List<CapturedClip> clips) {
     _heldSensitive
       ..clear()

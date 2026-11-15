@@ -51,7 +51,7 @@ class SettingsScreen extends StatelessWidget {
       TileRequestResult.alreadyAdded => 'The tile is already in Quick Settings',
       TileRequestResult.notAdded => 'Tile not added',
       TileRequestResult.unsupported =>
-        'Swipe down twice, tap the pencil (Edit) icon and drag "Save clipboard" into your tiles',
+        'Swipe down twice, tap the pencil (Edit) icon and drag "Save to Copy Box" into your tiles',
       TileRequestResult.error => 'Could not add the tile. Add it from Quick Settings > Edit',
     };
     messenger.showSnackBar(SnackBar(content: Text(text)));

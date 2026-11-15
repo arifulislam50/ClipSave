@@ -37,8 +37,8 @@ class PrivacyScreen extends StatelessWidget {
     ),
     (
       'When the clipboard is read',
-      'Only while Copy Box is open and focused (if auto-save is on), when you tap '
-          '"Save clipboard", or when you tap the Quick Settings tile. Share and '
+      'Only when Copy Box opens or returns to the screen (if auto-save is on), or '
+          'when you tap the Quick Settings tile. Share and '
           'text-selection saves receive only the text you sent. Text from the tile, '
           'Share or text selection waits in a small private queue until Copy Box '
           'next opens and checks it. The splash screen never reads the clipboard.'
