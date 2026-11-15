@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'ads/ads_service.dart';
@@ -25,6 +26,12 @@ class CopyBoxApp extends StatelessWidget {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: themeMode,
+      // Transparent status/navigation bars: light icons in dark mode, dark
+      // icons in light mode. (App bars and the pink splash set their own.)
+      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+        value: AppTheme.overlayStyle(Theme.of(context).brightness),
+        child: child ?? const SizedBox.shrink(),
+      ),
       // Consent (UMP) and Mobile Ads initialisation run during the splash.
       // They never touch the clipboard or the clip database.
       home: SplashScreen(

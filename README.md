@@ -75,7 +75,8 @@ Flutter UI (Material 3)  ──►  State (Provider ChangeNotifiers)  ──► 
 | `lib/main.dart` | Builds repositories and controllers, registers Providers, starts `ClipsController.init()` |
 | `lib/app.dart` | `MaterialApp`, light/dark themes, global `ScaffoldMessenger` key |
 | `lib/core/constants.dart` | App info, history-limit options, clip source labels |
-| `lib/core/theme/app_theme.dart` | Copy Box theme: `ColorScheme.fromSeed(#FD79A8)` with `onPrimary` #2D3436, `CopyBoxColors` palette extension (light/dark), component themes, folder palette |
+| `lib/core/theme/app_theme.dart` | Neutral themes with a pink accent: dark (default) is pure black (#000000 surface, #121214 cards, #26262A borders); light is white with neutral greys. `primary` #FD79A8, `onPrimary` #2D3436. `CopyBoxColors` holds only the roles `ColorScheme` lacks (card, fill, link, star, tip). Also transparent system-bar styles and the folder palette |
+| `lib/platform/window_bridge.dart` | Switches the native window background from start-up pink to the theme surface once the app UI shows |
 | `lib/core/ad_config.dart` | AdMob App ID and banner unit ID (Google **test** IDs; TODO before release) |
 | `lib/ads/ads_service.dart` | UMP consent flow, then Mobile Ads init; `adsReady`, `privacyOptionsRequired`, `showPrivacyOptions()` |
 | `lib/ui/widgets/ad_banner.dart` | Large anchored adaptive banner (History and Folders only, plain `AdRequest()`) |
@@ -200,7 +201,7 @@ SDK-free checks that were run and pass:
 |-------|---------|--------|
 | Logic + SQL | `python3 -I tool/verify_logic.py .` | 38 detection/classification cases from the Dart tests; 11 SQL checks (dedupe, LIKE escaping, prune, FK, folder and category counts) |
 | Structure + invariants | `python3 -I tool/check_structure.py .` | Imports, brackets, XML, resource refs, channel names; sensitivity gate; size cap; non-exported tile activity; **only AdMob permissions**; **AdMob App ID in manifest == `AdConfig`**; **only the two ad files use the ads SDK, they never reference clip data, `AdRequest()` has no targeting**; logo geometry identical in `app_logo.dart` and `tool/generate_logo.py` |
-| Contrast | (computed during the redesign) | #2D3436 on #FD79A8 = 5.1:1; #B01F63 on #FFE3EE = 5.4:1; muted #6B6470 on #FFFAFC = 5.5:1; category avatars ≥ 4.6:1. The amber star (#FDCB6E) is 1.5:1 on white, so it carries a "Favourite" label and is never the only signal. |
+| Contrast | (computed) | Dark: #F5F5F7 on #000000 19.3:1; #A1A1AA on #121214 7.3:1; pink #FD79A8 on black 8.5:1, on #1E1E22 6.7:1; tip #FDCB6E on #2A2110 10.5:1. Light: #1B1B1F on white 17.2:1; links #B01F63 6.5:1 (pink text on white would be 2.5:1). #2D3436 on #FD79A8 5.1:1. Category icons ≥ 5.6:1 (dark) / ≥ 4.1:1 (light) on their 18% tints. The amber star is decorative and has a "Favourite" label. |
 
 New Dart tests to run with `flutter test`: `test/copy_box_ui_test.dart` (theme colours, splash timing / init wait / failure / reduced motion, AppLogo, counter format, AdMob test-ID guard).
 

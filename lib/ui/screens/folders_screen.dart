@@ -144,7 +144,7 @@ class _BorderedCard extends StatelessWidget {
       color: colors.card,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: colors.border),
+        side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(onTap: onTap, child: child),
@@ -170,7 +170,6 @@ class _FolderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = CopyBoxColors.of(context);
     final color = Color(folder.color);
     return _BorderedCard(
       onTap: onOpen,
@@ -195,9 +194,9 @@ class _FolderCard extends StatelessWidget {
                   Text(folder.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleMedium?.copyWith(color: colors.text)),
+                      style: theme.textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
                   Text(_countLabel(folder.clipCount),
-                      style: theme.textTheme.labelMedium?.copyWith(color: colors.muted)),
+                      style: theme.textTheme.labelMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 ],
               ),
             ),
@@ -232,7 +231,6 @@ class _NoFoldersCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = CopyBoxColors.of(context);
     return _BorderedCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -240,12 +238,12 @@ class _NoFoldersCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('No folders yet',
-                style: theme.textTheme.titleMedium?.copyWith(color: colors.text)),
+                style: theme.textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
             const SizedBox(height: 4),
             Text(
               'Folders keep related clips together, like addresses, work snippets '
               'or links to read later.',
-              style: theme.textTheme.bodyMedium?.copyWith(color: colors.muted),
+              style: theme.textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 12),
             FilledButton.icon(
@@ -270,7 +268,6 @@ class _CategoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = CopyBoxColors.of(context);
     return Semantics(
       button: true,
       label: '${category.label}, ${_countLabel(count)}',
@@ -289,9 +286,9 @@ class _CategoryCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(category.label,
-                      style: theme.textTheme.titleSmall?.copyWith(color: colors.text)),
+                      style: theme.textTheme.titleSmall?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
                   Text(_countLabel(count),
-                      style: theme.textTheme.labelMedium?.copyWith(color: colors.muted)),
+                      style: theme.textTheme.labelMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                 ],
               ),
             ],

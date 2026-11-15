@@ -17,7 +17,7 @@ class SectionHeader extends StatelessWidget {
         child: Text(
           text,
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: CopyBoxColors.of(context).muted,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.8,
               ),

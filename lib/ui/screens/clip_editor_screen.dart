@@ -122,11 +122,11 @@ class _ClipEditorScreenState extends State<ClipEditorScreen> {
             maxLines: 14,
             maxLength: AppInfo.maxClipLength,
             keyboardType: TextInputType.multiline,
-            style: TextStyle(color: colors.text),
+            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             decoration: InputDecoration(
               hintText: 'Type or paste text to keep',
               filled: true,
-              fillColor: colors.card,
+              fillColor: Theme.of(context).colorScheme.surfaceContainer,
               counterText: '',
               enabledBorder: pinkBorder,
               focusedBorder: pinkBorder,
@@ -142,7 +142,7 @@ class _ClipEditorScreenState extends State<ClipEditorScreen> {
               builder: (_, value, __) => Text(
                 '${formatThousands(value.text.length)} / '
                 '${formatThousands(AppInfo.maxClipLength)}',
-                style: theme.textTheme.labelMedium?.copyWith(color: colors.muted),
+                style: theme.textTheme.labelMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
             ),
           ),
@@ -199,10 +199,10 @@ class _TipCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final background = dark ? const Color(0xFF3A3120) : const Color(0xFFFFF6DE);
-    final border = dark ? const Color(0xFF6B5A2E) : const Color(0xFFFDCB6E);
-    final textColor = dark ? const Color(0xFFF5E6C2) : const Color(0xFF5C4400);
+    final colors = CopyBoxColors.of(context);
+    final background = colors.tipBackground;
+    final border = colors.tipBorder;
+    final textColor = colors.tipForeground;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(

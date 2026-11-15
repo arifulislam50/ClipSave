@@ -2,7 +2,9 @@
 <!-- Android 12+ (API 31), light. A values-night-v31 copy is needed because "night" outranks "v31".
      Start-up is one continuous pink (#FD79A8) screen on every Android version:
      LaunchTheme (until Flutter draws) -> NormalTheme (while Flutter initialises)
-     -> the in-app pink splash. No black or white flash, no second logo. -->
+     -> the in-app pink splash. No black or white flash, no second logo.
+     When the app UI appears, Flutter calls MainActivity "setWindowBackground" so
+     the window behind Flutter follows the app theme (black in dark mode). -->
 <resources>
     <!-- Shown while the Flutter engine starts. -->
     <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">

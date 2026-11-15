@@ -18,14 +18,17 @@ class SettingsRepository {
   static const _kHistoryLimit = 'history_limit';
   static const _kGuideDismissed = 'guide_dismissed';
 
+  /// Defaults to dark until the user picks something; a saved choice
+  /// (including "system") is always restored.
   ThemeMode get themeMode {
     switch (_prefs.getString(_kTheme)) {
       case 'light':
         return ThemeMode.light;
-      case 'dark':
-        return ThemeMode.dark;
-      default:
+      case 'system':
         return ThemeMode.system;
+      case 'dark':
+      default:
+        return ThemeMode.dark;
     }
   }
 

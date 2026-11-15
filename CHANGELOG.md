@@ -1,5 +1,14 @@
 # Changelog
 
+## Copy Box follow-up fixes (PR #1)
+
+Not build-tested here: no Flutter or Android SDK.
+
+- **A. Launcher icon fit:** artwork scaled to 78% around (54,54). The farthest corner is now 30.46 from the centre (was 39.05; limit 31), so round masks no longer clip it. Radius 3.9, stroke 2.0. All assets were regenerated from `tool/generate_logo.py`, which asserts centring and the safe radius.
+- **B. One pink start-up screen:** the Android 12+ system splash is pink with a transparent icon and no animation, in light and dark. Pre-12 launch and normal window backgrounds are pink in both modes, with pink system bars. The black splash and the second logo are gone.
+- **C. Centred splash:** a single centred column (logo 156 wide, 28, title, 8, tagline, 32, bar, 14, footer). The logo fades in.
+- **D. Black UI:** dark mode is the default (saved choices are still restored). Dark is pure black with neutral greys; light is white with neutral greys. Pink is only the accent. All pale pinks are removed. Category avatars use their colour at 18%; the tip card is #2A2110 / #FDCB6E. System bars are transparent, with icons following the theme. The window background switches from pink to the theme surface when the UI shows.
+
 ## Copy Box rebrand (branch `rebrand-copy-box`)
 
 **Not build-tested.** No Flutter or Android SDK was available. See README → Verification status.

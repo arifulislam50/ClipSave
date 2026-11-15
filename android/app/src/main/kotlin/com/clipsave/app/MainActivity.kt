@@ -2,6 +2,7 @@ package com.clipsave.app
 
 import android.content.ClipboardManager
 import android.content.Context
+import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -17,6 +18,7 @@ import io.flutter.plugin.common.MethodChannel
  *   drainInbox    -> List<Map> (items saved by tile/share/selection while UI was closed)
  *   requestAddTile -> String   (Android 13+ "add tile" system prompt)
  *   sdkInt        -> Int
+ *   setWindowBackground(color) (ARGB; the window starts pink, then follows the app theme)
  *
  * Event channel "com.clipsave.app/clipboard_events":
  *   Emits the clipboard when Copy Box gains focus or the clip changes while
@@ -55,6 +57,16 @@ class MainActivity : FlutterActivity() {
                 "drainInbox" -> result.success(ClipInbox.drain(this))
                 "requestAddTile" -> TileHelper.requestAddTile(this) { status -> result.success(status) }
                 "sdkInt" -> result.success(Build.VERSION.SDK_INT)
+                "setWindowBackground" -> {
+                    val color = call.argument<Number>("color")
+                    if (color == null) {
+                        result.error("bad_args", "color is required", null)
+                    } else {
+                        // Dart sends 0xAARRGGBB as a (possibly Long) number; toInt() keeps the bits.
+                        window.setBackgroundDrawable(ColorDrawable(color.toLong().toInt()))
+                        result.success(null)
+                    }
+                }
                 else -> result.notImplemented()
             }
         }

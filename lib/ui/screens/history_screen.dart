@@ -114,12 +114,12 @@ class _SearchFieldState extends State<_SearchField> {
       hintText: 'Search clips',
       constraints: const BoxConstraints(minHeight: 52, maxHeight: 52),
       elevation: const WidgetStatePropertyAll<double>(0),
-      backgroundColor: WidgetStatePropertyAll<Color>(colors.tint),
+      backgroundColor: WidgetStatePropertyAll<Color>(colors.fill),
       shape: const WidgetStatePropertyAll<OutlinedBorder>(StadiumBorder()),
-      hintStyle: WidgetStatePropertyAll<TextStyle>(TextStyle(color: colors.muted)),
+      hintStyle: WidgetStatePropertyAll<TextStyle>(TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
       padding: const WidgetStatePropertyAll<EdgeInsets>(
           EdgeInsets.symmetric(horizontal: 12)),
-      leading: Icon(Icons.search_rounded, color: colors.muted),
+      leading: Icon(Icons.search_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
       trailing: [
         if (_controller.text.isNotEmpty)
           IconButton(

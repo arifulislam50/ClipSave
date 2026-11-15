@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app.dart';
-import '../core/theme/app_theme.dart';
 import '../core/utils/content_classifier.dart';
 import '../data/models/clip_filter.dart';
+import '../platform/window_bridge.dart';
 import '../state/app_message.dart';
 import '../state/clips_controller.dart';
 import 'screens/folders_screen.dart';
@@ -48,6 +48,15 @@ class _RootShellState extends State<RootShell> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // The native window starts pink (no flash at start-up). From here on it
+    // follows the app theme (black in dark mode), so nothing light can show
+    // behind Flutter, e.g. while the keyboard resizes the window.
+    WindowBridge.setBackground(Theme.of(context).colorScheme.surface);
+  }
+
+  @override
   void dispose() {
     _messageSub?.cancel();
     super.dispose();
@@ -60,7 +69,6 @@ class _RootShellState extends State<RootShell> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = CopyBoxColors.of(context);
     // Each tab has its own Scaffold so snackbars sit above that tab's FAB.
     // The navigation bar handles the bottom system inset for them.
     return Column(
@@ -88,8 +96,8 @@ class _RootShellState extends State<RootShell> {
         if (_index != 2) const AdaptiveBanner(key: ValueKey<String>('banner')),
         DecoratedBox(
           decoration: BoxDecoration(
-            color: colors.card,
-            border: Border(top: BorderSide(color: colors.border)),
+            color: Theme.of(context).colorScheme.surface,
+            border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
           ),
           child: NavigationBar(
             selectedIndex: _index,

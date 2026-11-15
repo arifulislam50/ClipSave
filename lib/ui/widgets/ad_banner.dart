@@ -3,7 +3,6 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 import '../../ads/ads_service.dart';
 import '../../core/ad_config.dart';
-import '../../core/theme/app_theme.dart';
 
 /// One large anchored adaptive banner, shown above the bottom navigation bar
 /// on the History and Folders tabs only.
@@ -92,7 +91,6 @@ class _AdaptiveBannerState extends State<AdaptiveBanner> {
   Widget build(BuildContext context) {
     final ad = _ad;
     if (ad == null) return const SizedBox.shrink();
-    final colors = CopyBoxColors.of(context);
     return Semantics(
       container: true,
       label: 'Advertisement',
@@ -100,8 +98,8 @@ class _AdaptiveBannerState extends State<AdaptiveBanner> {
         width: double.infinity,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: colors.card,
-          border: Border(top: BorderSide(color: colors.border)),
+          color: Theme.of(context).colorScheme.surface,
+          border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant)),
         ),
         child: SizedBox(
           width: ad.size.width.toDouble(),

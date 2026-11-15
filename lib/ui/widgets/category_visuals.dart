@@ -2,13 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../core/utils/content_classifier.dart';
 
-/// Soft avatar colours for a category (icon contrast ≥ 4.6:1 on its tint).
-class CategoryTint {
-  const CategoryTint(this.background, this.foreground);
-  final Color background;
-  final Color foreground;
-}
-
 /// UI-only visuals for categories, kept out of the core layer.
 extension ClipCategoryVisuals on ClipCategory {
   IconData get icon {
@@ -42,29 +35,21 @@ extension ClipCategoryVisuals on ClipCategory {
     }
   }
 
-  CategoryTint tint(Brightness brightness) {
-    final light = brightness == Brightness.light;
+  /// Category colour. The avatar uses it at 18% alpha behind the full-colour
+  /// icon (icon contrast ≥ 5.6:1 on the dark card, ≥ 4.1:1 on white).
+  Color color(Brightness brightness) {
+    final dark = brightness == Brightness.dark;
     switch (this) {
       case ClipCategory.link:
-        return light
-            ? const CategoryTint(Color(0xFFE3EEFF), Color(0xFF1D5FB8))
-            : const CategoryTint(Color(0xFF1F3550), Color(0xFFA9CCFF));
+        return dark ? const Color(0xFF5AA9FF) : const Color(0xFF1D5FB8);
       case ClipCategory.email:
-        return light
-            ? const CategoryTint(Color(0xFFEEE6FF), Color(0xFF6B3FB8))
-            : const CategoryTint(Color(0xFF352A50), Color(0xFFD2BEFF));
+        return dark ? const Color(0xFFB794FF) : const Color(0xFF6B3FB8);
       case ClipCategory.phone:
-        return light
-            ? const CategoryTint(Color(0xFFDFF5E8), Color(0xFF1E7A4C))
-            : const CategoryTint(Color(0xFF1E3A2C), Color(0xFFA6E3C3));
+        return dark ? const Color(0xFF4CD493) : const Color(0xFF1E7A4C);
       case ClipCategory.number:
-        return light
-            ? const CategoryTint(Color(0xFFFFF0D4), Color(0xFF8A5A00))
-            : const CategoryTint(Color(0xFF4A3A1A), Color(0xFFFFD98A));
+        return dark ? const Color(0xFFFFC14D) : const Color(0xFF8A5A00);
       case ClipCategory.text:
-        return light
-            ? const CategoryTint(Color(0xFFFFE3EE), Color(0xFFB01F63))
-            : const CategoryTint(Color(0xFF4A2536), Color(0xFFFF9EC4));
+        return dark ? const Color(0xFFFD79A8) : const Color(0xFFB01F63);
     }
   }
 }
@@ -78,13 +63,16 @@ class CategoryAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tint = category.tint(Theme.of(context).brightness);
+    final color = category.color(Theme.of(context).brightness);
     return ExcludeSemantics(
       child: Container(
         width: size,
         height: size,
-        decoration: BoxDecoration(color: tint.background, shape: BoxShape.circle),
-        child: Icon(category.icon, size: size * 0.5, color: tint.foreground),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.18),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(category.icon, size: size * 0.5, color: color),
       ),
     );
   }

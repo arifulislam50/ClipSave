@@ -1,11 +1,13 @@
 import 'package:clipsave/core/ad_config.dart';
 import 'package:clipsave/core/constants.dart';
 import 'package:clipsave/core/theme/app_theme.dart';
+import 'package:clipsave/data/repositories/settings_repository.dart';
 import 'package:clipsave/ui/screens/clip_editor_screen.dart';
 import 'package:clipsave/ui/screens/splash_screen.dart';
 import 'package:clipsave/ui/widgets/app_logo.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 Widget _host(Widget child, {bool reduceMotion = false}) => MaterialApp(
       theme: AppTheme.light(),
@@ -27,14 +29,69 @@ void main() {
       });
     }
 
-    test('light palette', () {
-      final c = AppTheme.light().extension<CopyBoxColors>()!;
-      expect(c.tint, const Color(0xFFFFE3EE));
-      expect(c.background, const Color(0xFFFFFAFC));
-      expect(c.border, const Color(0xFFF3DCE6));
-      expect(c.link, const Color(0xFFB01F63));
-      expect(c.star, const Color(0xFFFDCB6E));
+    test('dark scheme: pure black, neutral surfaces, no pink tint', () {
+      final c = AppTheme.dark().colorScheme;
+      expect(c.surface, const Color(0xFF000000));
+      expect(c.surfaceContainerLowest, const Color(0xFF000000));
+      expect(c.surfaceContainerLow, const Color(0xFF0B0B0D));
+      expect(c.surfaceContainer, const Color(0xFF121214));
+      expect(c.surfaceContainerHigh, const Color(0xFF1A1A1D));
+      expect(c.surfaceContainerHighest, const Color(0xFF222226));
+      expect(c.surfaceTint, const Color(0x00000000));
+      expect(c.onSurface, const Color(0xFFF5F5F7));
+      expect(c.onSurfaceVariant, const Color(0xFFA1A1AA));
+      expect(c.outline, const Color(0xFF3A3A40));
+      expect(c.outlineVariant, const Color(0xFF26262A));
+      expect(AppTheme.dark().scaffoldBackgroundColor, const Color(0xFF000000));
+      final x = AppTheme.dark().extension<CopyBoxColors>()!;
+      expect(x.card, const Color(0xFF121214));
+      expect(x.fill, const Color(0xFF1E1E22));
+      expect(x.link, const Color(0xFFFD79A8));
+      expect(x.tipBackground, const Color(0xFF2A2110));
+      expect(x.tipForeground, const Color(0xFFFDCB6E));
+    });
+
+    test('light scheme: white with neutral greys', () {
+      final c = AppTheme.light().colorScheme;
+      expect(c.surface, const Color(0xFFFFFFFF));
+      expect(c.surfaceContainer, const Color(0xFFF6F6F7));
+      expect(c.surfaceContainerHigh, const Color(0xFFEFEFF1));
+      expect(c.outlineVariant, const Color(0xFFE4E4E7));
+      expect(c.onSurface, const Color(0xFF1B1B1F));
       expect(AppTheme.folderColors.first, const Color(0xFFFD79A8));
+    });
+
+    test('no pale pink anywhere in either scheme', () {
+      const pale = [Color(0xFFFFE3EE), Color(0xFFFFFAFC), Color(0xFFFFF1D6)];
+      for (final theme in [AppTheme.light(), AppTheme.dark()]) {
+        final c = theme.colorScheme;
+        for (final role in [
+          c.surface, c.surfaceContainerLowest, c.surfaceContainerLow, c.surfaceContainer,
+          c.surfaceContainerHigh, c.surfaceContainerHighest, c.primaryContainer,
+          c.secondaryContainer, c.outlineVariant,
+        ]) {
+          expect(pale.contains(role), isFalse);
+        }
+      }
+    });
+
+    test('status/navigation bars: transparent, icons follow brightness', () {
+      final dark = AppTheme.overlayStyle(Brightness.dark);
+      expect(dark.statusBarIconBrightness, Brightness.light);
+      expect(dark.statusBarColor, const Color(0x00000000));
+      expect(dark.systemNavigationBarColor, const Color(0x00000000));
+      expect(AppTheme.overlayStyle(Brightness.light).statusBarIconBrightness, Brightness.dark);
+    });
+  });
+
+  group('theme mode default', () {
+    test('dark when nothing saved; saved choices restored', () async {
+      SharedPreferences.setMockInitialValues({});
+      expect((await SettingsRepository.create()).themeMode, ThemeMode.dark);
+      for (final mode in ThemeMode.values) {
+        SharedPreferences.setMockInitialValues({'theme_mode': mode.name});
+        expect((await SettingsRepository.create()).themeMode, mode);
+      }
     });
   });
 

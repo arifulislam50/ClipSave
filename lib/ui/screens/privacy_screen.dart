@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_theme.dart';
 
 /// In-app summary of the privacy policy (keep in sync with PRIVACY_POLICY.md).
 class PrivacyScreen extends StatelessWidget {
@@ -62,7 +61,6 @@ class PrivacyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = CopyBoxColors.of(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Privacy policy', style: TextStyle(fontWeight: FontWeight.w600)),
@@ -72,10 +70,10 @@ class PrivacyScreen extends StatelessWidget {
         children: [
           for (final (title, body) in _sections) ...[
             const SizedBox(height: 16),
-            Text(title, style: theme.textTheme.titleMedium?.copyWith(color: colors.text)),
+            Text(title, style: theme.textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
             const SizedBox(height: 4),
             SelectableText(body,
-                style: theme.textTheme.bodyMedium?.copyWith(color: colors.text)),
+                style: theme.textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
           ],
         ],
       ),

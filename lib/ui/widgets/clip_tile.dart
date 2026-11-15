@@ -26,7 +26,7 @@ class ClipTile extends StatelessWidget {
       TimeFormat.relative(item.updatedAt),
       ClipSources.label(item.source),
     ].join(' · ');
-    final metaStyle = theme.textTheme.labelMedium?.copyWith(color: colors.muted);
+    final metaStyle = theme.textTheme.labelMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -34,7 +34,7 @@ class ClipTile extends StatelessWidget {
         color: colors.card,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: colors.border),
+          side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -54,7 +54,7 @@ class ClipTile extends StatelessWidget {
                         item.preview,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyLarge?.copyWith(color: colors.text),
+                        style: theme.textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onSurface),
                       ),
                       const SizedBox(height: 4),
                       Row(
@@ -110,7 +110,7 @@ class CopyButton extends StatelessWidget {
       tooltip: 'Copy',
       onPressed: onPressed,
       style: IconButton.styleFrom(
-        backgroundColor: colors.tint,
+        backgroundColor: colors.fill,
         fixedSize: const Size(44, 44),
         minimumSize: const Size(44, 44),
         shape: const CircleBorder(),
