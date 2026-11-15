@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
 
-/// Centered icon + title + message, with an optional action.
+/// Centered illustration + title + message, with optional actions.
 class EmptyState extends StatelessWidget {
   const EmptyState({
     super.key,
-    required this.icon,
     required this.title,
     required this.message,
-    this.action,
-  });
+    this.icon,
+    this.illustration,
+    this.actions = const [],
+  }) : assert(icon != null || illustration != null);
 
-  final IconData icon;
+  final IconData? icon;
+
+  /// Shown instead of [icon] when set (for example the large logo tile).
+  final Widget? illustration;
   final String title;
   final String message;
-  final Widget? action;
+  final List<Widget> actions;
 
   @override
   Widget build(BuildContext context) {
@@ -24,10 +28,14 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 64, color: theme.colorScheme.primary),
-            const SizedBox(height: 16),
-            Text(title,
-                style: theme.textTheme.titleLarge, textAlign: TextAlign.center),
+            illustration ??
+                Icon(icon, size: 64, color: theme.colorScheme.onSurfaceVariant),
+            const SizedBox(height: 20),
+            Text(
+              title,
+              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 8),
             Text(
               message,
@@ -35,7 +43,10 @@ class EmptyState extends StatelessWidget {
                   ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               textAlign: TextAlign.center,
             ),
-            if (action != null) ...[const SizedBox(height: 20), action!],
+            if (actions.isNotEmpty) ...[
+              const SizedBox(height: 20),
+              ...actions,
+            ],
           ],
         ),
       ),

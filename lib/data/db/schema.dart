@@ -43,6 +43,12 @@ LEFT JOIN clips c ON c.folder_id = f.id
 GROUP BY f.id
 ORDER BY f.name COLLATE NOCASE''';
 
+  /// Number of clips per automatic category.
+  static const String categoryCounts = '''
+SELECT category, COUNT(*) AS clip_count
+FROM clips
+GROUP BY category''';
+
   /// Deletes the oldest non-favourite clips beyond [limit]. Arg: limit.
   static const String prune = '''
 DELETE FROM clips

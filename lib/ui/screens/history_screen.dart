@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/theme/app_theme.dart';
 import '../../data/models/clip_filter.dart';
 import '../../state/clips_controller.dart';
 import '../../state/settings_controller.dart';
@@ -39,6 +40,7 @@ class HistoryScreen extends StatelessWidget {
             onPressed: () => ClipActions.openEditor(context),
           ),
           PopupMenuButton<_HistoryMenu>(
+            tooltip: 'More options',
             onSelected: (value) {
               switch (value) {
                 case _HistoryMenu.clear:
@@ -64,7 +66,7 @@ class HistoryScreen extends StatelessWidget {
       body: Column(
         children: [
           const Padding(
-            padding: EdgeInsets.fromLTRB(12, 0, 12, 4),
+            padding: EdgeInsets.fromLTRB(12, 4, 12, 4),
             child: _SearchField(),
           ),
           const FilterBar(),
@@ -74,8 +76,8 @@ class HistoryScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => ClipActions.saveClipboard(context),
-        icon: const Icon(Icons.content_paste_go_rounded),
-        label: const Text('Save clipboard'),
+        icon: const Icon(Icons.content_paste_rounded),
+        label: const Text('Save clipboard', style: TextStyle(fontWeight: FontWeight.w600)),
       ),
     );
   }
@@ -106,19 +108,23 @@ class _SearchFieldState extends State<_SearchField> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = CopyBoxColors.of(context);
     return SearchBar(
       controller: _controller,
       hintText: 'Search clips',
+      constraints: const BoxConstraints(minHeight: 52, maxHeight: 52),
       elevation: const WidgetStatePropertyAll<double>(0),
-      leading: const Padding(
-        padding: EdgeInsets.only(left: 4),
-        child: Icon(Icons.search),
-      ),
+      backgroundColor: WidgetStatePropertyAll<Color>(colors.tint),
+      shape: const WidgetStatePropertyAll<OutlinedBorder>(StadiumBorder()),
+      hintStyle: WidgetStatePropertyAll<TextStyle>(TextStyle(color: colors.muted)),
+      padding: const WidgetStatePropertyAll<EdgeInsets>(
+          EdgeInsets.symmetric(horizontal: 12)),
+      leading: Icon(Icons.search_rounded, color: colors.muted),
       trailing: [
         if (_controller.text.isNotEmpty)
           IconButton(
             tooltip: 'Clear search',
-            icon: const Icon(Icons.close),
+            icon: const Icon(Icons.close_rounded),
             onPressed: () {
               _controller.clear();
               _changed('');
@@ -155,23 +161,32 @@ class _ClipList extends StatelessWidget {
           icon: Icons.filter_alt_off_outlined,
           title: 'Nothing here yet',
           message: 'No clips match this filter.',
-          action: TextButton(
-            onPressed: () => controller.setFilter(ClipFilter.all),
-            child: const Text('Show all clips'),
-          ),
+          actions: [
+            TextButton(
+              onPressed: () => controller.setFilter(ClipFilter.all),
+              child: const Text('Show all clips'),
+            ),
+          ],
         );
       }
       return EmptyState(
-        icon: Icons.content_paste_rounded,
-        title: 'Your clipboard history',
-        message: 'Copy something, then come back here or tap "Save clipboard". '
-            'Saved text stays on this device only.',
-        action: FilledButton.tonalIcon(
-          onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
-              builder: (_) => const CaptureGuideScreen())),
-          icon: const Icon(Icons.help_outline),
-          label: const Text('How capture works'),
-        ),
+        illustration: const AppLogo(size: 112, semanticLabel: null),
+        title: 'Nothing saved yet',
+        message: 'Copy text in any app, then come back here or tap '
+            '"Save clipboard". Your clips are stored on this device.',
+        actions: [
+          FilledButton.icon(
+            onPressed: () => ClipActions.saveClipboard(context),
+            icon: const Icon(Icons.content_paste_rounded),
+            label: const Text('Save clipboard'),
+          ),
+          const SizedBox(height: 4),
+          TextButton(
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                builder: (_) => const CaptureGuideScreen())),
+            child: const Text('How capture works'),
+          ),
+        ],
       );
     }
 
@@ -185,9 +200,10 @@ class _ClipList extends StatelessWidget {
           direction: DismissDirection.endToStart,
           background: Container(
             alignment: Alignment.centerRight,
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 28),
             color: Theme.of(context).colorScheme.errorContainer,
             child: Icon(Icons.delete_outline,
+                semanticLabel: 'Delete',
                 color: Theme.of(context).colorScheme.onErrorContainer),
           ),
           onDismissed: (_) => ClipActions.delete(context, item),

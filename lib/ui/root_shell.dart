@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app.dart';
+import '../core/theme/app_theme.dart';
+import '../core/utils/content_classifier.dart';
 import '../data/models/clip_filter.dart';
 import '../state/app_message.dart';
 import '../state/clips_controller.dart';
@@ -50,13 +52,14 @@ class _RootShellState extends State<RootShell> {
     super.dispose();
   }
 
-  void _openFolder(int folderId) {
-    context.read<ClipsController>().setFilter(ClipFilter.folder(folderId));
+  void _showHistory(ClipFilter filter) {
+    context.read<ClipsController>().setFilter(filter);
     setState(() => _index = 0);
   }
 
   @override
   Widget build(BuildContext context) {
+    final colors = CopyBoxColors.of(context);
     // Each tab has its own Scaffold so snackbars sit above that tab's FAB.
     // The navigation bar handles the bottom system inset for them.
     return Column(
@@ -69,32 +72,41 @@ class _RootShellState extends State<RootShell> {
               index: _index,
               children: [
                 const HistoryScreen(),
-                FoldersScreen(onOpenFolder: _openFolder),
+                FoldersScreen(
+                  onOpenFolder: (id) => _showHistory(ClipFilter.folder(id)),
+                  onOpenCategory: (ClipCategory c) => _showHistory(ClipFilter.category(c)),
+                ),
                 const SettingsScreen(),
               ],
             ),
           ),
         ),
-        NavigationBar(
-          selectedIndex: _index,
-          onDestinationSelected: (i) => setState(() => _index = i),
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.history_outlined),
-              selectedIcon: Icon(Icons.history),
-              label: 'History',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.folder_outlined),
-              selectedIcon: Icon(Icons.folder),
-              label: 'Folders',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.settings_outlined),
-              selectedIcon: Icon(Icons.settings),
-              label: 'Settings',
-            ),
-          ],
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: colors.card,
+            border: Border(top: BorderSide(color: colors.border)),
+          ),
+          child: NavigationBar(
+            selectedIndex: _index,
+            onDestinationSelected: (i) => setState(() => _index = i),
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.history_outlined),
+                selectedIcon: Icon(Icons.history_rounded),
+                label: 'History',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.folder_outlined),
+                selectedIcon: Icon(Icons.folder_rounded),
+                label: 'Folders',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.settings_outlined),
+                selectedIcon: Icon(Icons.settings_rounded),
+                label: 'Settings',
+              ),
+            ],
+          ),
         ),
       ],
     );

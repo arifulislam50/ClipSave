@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 
 import '../core/constants.dart';
 import '../core/theme/app_theme.dart';
+import '../core/utils/content_classifier.dart';
 import '../core/utils/sensitive_detector.dart';
 import '../data/models/clip_filter.dart';
 import '../data/models/clip_item.dart';
@@ -68,6 +69,7 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
 
   List<ClipItem> _items = const [];
   List<Folder> _folders = const [];
+  Map<ClipCategory, int> _categoryCounts = const {};
   String _query = '';
   ClipFilter _filter = ClipFilter.all;
   bool _loading = true;
@@ -85,6 +87,7 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
 
   List<ClipItem> get items => _items;
   List<Folder> get folders => _folders;
+  int categoryCount(ClipCategory category) => _categoryCounts[category] ?? 0;
   String get query => _query;
   ClipFilter get filter => _filter;
   bool get loading => _loading;
@@ -181,7 +184,9 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
       _filter = ClipFilter.all;
     }
     final items = await _repo.query(search: _query, filter: _filter);
+    final counts = await _repo.categoryCounts();
     _folders = folders;
+    _categoryCounts = counts;
     _items = items;
     _loading = false;
     _notify();
@@ -332,13 +337,22 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
   // ---------------------------------------------------------- clip edits --
 
   /// Adds typed text. Returns null if empty or too long.
-  Future<SaveResult?> addClip(String text, {int? folderId}) async {
+  Future<SaveResult?> addClip(String text,
+      {int? folderId, bool favorite = false}) async {
     if (text.length > AppInfo.maxClipLength) return null;
-    return _store(text, source: ClipSources.manual, folderId: folderId);
+    final result =
+        await _store(text, source: ClipSources.manual, folderId: folderId);
+    final id = result?.item.id;
+    if (favorite && id != null && !result!.item.isFavorite) {
+      await _repo.setFavorite(id, true);
+      await refresh();
+    }
+    return result;
   }
 
   /// Returns false if another clip already has exactly this text.
-  Future<bool> updateClip(ClipItem item, String text, {int? folderId}) async {
+  Future<bool> updateClip(ClipItem item, String text,
+      {int? folderId, bool? favorite}) async {
     if (item.id == null ||
         text.trim().isEmpty ||
         text.length > AppInfo.maxClipLength) {
@@ -348,6 +362,9 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
       await _repo.updateContent(item.id!, text, folderId: _validFolder(folderId));
     } on DuplicateClipException {
       return false;
+    }
+    if (favorite != null && favorite != item.isFavorite) {
+      await _repo.setFavorite(item.id!, favorite);
     }
     await refresh();
     return true;

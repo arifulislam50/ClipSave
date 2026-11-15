@@ -176,6 +176,16 @@ class ClipRepository {
     await db.rawDelete(DbSchema.prune, [limit]);
   }
 
+  /// Clip count per automatic category (categories with no clips are absent).
+  Future<Map<ClipCategory, int>> categoryCounts() async {
+    final db = await _db;
+    final rows = await db.rawQuery(DbSchema.categoryCounts);
+    return {
+      for (final row in rows)
+        ClipCategory.fromKey(row['category'] as String?): row['clip_count'] as int,
+    };
+  }
+
   Future<int> count() async {
     final db = await _db;
     return Sqflite.firstIntValue(

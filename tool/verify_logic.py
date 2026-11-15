@@ -147,6 +147,10 @@ db.execute('DELETE FROM folders WHERE id = ?', (folder,))
 check(db.execute("SELECT folder_id FROM clips WHERE content='fav'").fetchone()[0] is None,
       'deleting folder sets clips.folder_id NULL (FK ON DELETE SET NULL)')
 check(query('is_favorite = 1') == ['fav'], 'favourites filter')
+db.execute('DELETE FROM clips')
+for t in ['https://a.com', 'https://b.com', 'me@example.com', 'hello']: save(t)
+counts = dict(db.execute(const('categoryCounts')).fetchall())
+check(counts == {'link': 2, 'email': 1, 'text': 1}, 'category counts query')
 
 print(f'\n{"ALL PASSED" if fails == 0 else str(fails) + " FAILED"}')
 sys.exit(1 if fails else 0)
