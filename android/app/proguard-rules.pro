@@ -3,7 +3,7 @@
 # UMP and AndroidX ship their own consumer rules inside their AARs.
 
 # Copy Box's own Android components. They are referenced from the manifest
-# (activities, tile service) and the method/event channels are looked up by
+# (activities, tile service, BootReceiver) and the method/event channels are looked up by
 # string name, so nothing here is reflective; keeping the package whole is a
 # cheap safety net (a handful of small classes).
 -keep class com.clipsave.app.** { *; }

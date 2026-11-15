@@ -107,6 +107,10 @@ class MainActivity : FlutterActivity() {
 
     override fun onResume() {
         super.onResume()
+        // Quick-save notification: show it again if it is on but missing
+        // (dismissed by the user or removed by the system). Off the main thread.
+        val appContext = applicationContext
+        io().execute { QuickSaveNotification.repostIfNeeded(appContext) }
         if (!listenerRegistered) {
             clipboard.addPrimaryClipChangedListener(clipListener)
             listenerRegistered = true

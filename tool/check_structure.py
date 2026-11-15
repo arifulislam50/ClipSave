@@ -94,8 +94,10 @@ manifest = (root / 'android/app/src/main/AndroidManifest.xml').read_text()
 for cls in re.findall(r'android:name="\.(\w+)"', manifest):
     if not (root / f'android/app/src/main/kotlin/com/clipsave/app/{cls}.kt').exists():
         errors.append(f'manifest references missing class {cls}')
-# Only the network permissions AdMob needs; no runtime (dangerous) permissions.
-ALLOWED_PERMISSIONS = {'android.permission.INTERNET', 'android.permission.ACCESS_NETWORK_STATE'}
+# AdMob network permissions + the quick-save notification (boot re-post and,
+# on Android 13+, the notification permission requested only when turned on).
+ALLOWED_PERMISSIONS = {'android.permission.INTERNET', 'android.permission.ACCESS_NETWORK_STATE',
+                       'android.permission.RECEIVE_BOOT_COMPLETED', 'android.permission.POST_NOTIFICATIONS'}
 for perm in re.findall(r'<uses-permission[^>]*android:name="([^"]+)"', manifest):
     if perm not in ALLOWED_PERMISSIONS:
         errors.append(f'unexpected permission in main manifest: {perm}')

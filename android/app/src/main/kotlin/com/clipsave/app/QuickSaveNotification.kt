@@ -1,12 +1,15 @@
 package com.clipsave.app
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.drawable.Icon
+import android.os.Build
 
 /**
  * The persistent "quick-save" notification: a Save button in the shade that
@@ -31,8 +34,39 @@ object QuickSaveNotification {
     private const val REQUEST_OPEN = 102
     private const val REQUEST_CONTENT = 103
 
+    // The on/off setting lives in the native prefs file (not Flutter's), so
+    // BootReceiver can read it without starting Flutter.
+    private const val PREFS = "clipsave_native"
+    private const val KEY_ENABLED = "quick_save_enabled"
+
     private fun manager(context: Context): NotificationManager =
         context.getSystemService(NotificationManager::class.java)
+
+    fun isEnabled(context: Context): Boolean =
+        context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getBoolean(KEY_ENABLED, false)
+
+    fun setEnabled(context: Context, enabled: Boolean) {
+        context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit().putBoolean(KEY_ENABLED, enabled).apply()
+    }
+
+    /** POST_NOTIFICATIONS is a runtime permission only on Android 13+ (API 33). */
+    fun hasPermission(context: Context): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+
+    /**
+     * Re-posts the notification if the setting is on, the permission is
+     * granted and it is not currently showing (the user swiped it away, which
+     * Android 14+ allows for ongoing notifications, or the system removed it).
+     * Never posts while the setting is off.
+     */
+    fun repostIfNeeded(context: Context) {
+        if (!isEnabled(context) || !hasPermission(context)) return
+        if (!isPosted(context)) post(context)
+    }
 
     /** IMPORTANCE_LOW: no sound, no vibration, no heads-up; no badge. */
     fun ensureChannel(context: Context) {
