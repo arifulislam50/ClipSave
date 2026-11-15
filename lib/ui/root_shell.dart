@@ -12,6 +12,7 @@ import '../state/clips_controller.dart';
 import 'screens/folders_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/settings_screen.dart';
+import 'widgets/ad_banner.dart';
 
 /// Bottom navigation: History, Folders, Settings.
 class RootShell extends StatefulWidget {
@@ -81,6 +82,10 @@ class _RootShellState extends State<RootShell> {
             ),
           ),
         ),
+        // Banner on History (0) and Folders (1) only, between the tab content
+        // and the navigation bar, so each tab's FAB always sits above it.
+        // Not on Settings, the editor (a pushed route), splash or capture.
+        if (_index != 2) const AdaptiveBanner(key: ValueKey<String>('banner')),
         DecoratedBox(
           decoration: BoxDecoration(
             color: colors.card,

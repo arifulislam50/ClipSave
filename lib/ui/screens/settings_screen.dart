@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../ads/ads_service.dart';
 import '../../core/constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../platform/clipboard_bridge.dart';
@@ -148,7 +149,16 @@ class SettingsScreen extends StatelessWidget {
             ),
           ]),
           const SectionHeader('ABOUT'),
-          SettingsGroup(children: [
+          ValueListenableBuilder<bool>(
+            valueListenable: AdsService.instance.privacyOptionsRequired,
+            builder: (context, privacyOptionsRequired, _) => SettingsGroup(children: [
+            if (privacyOptionsRequired)
+              ListTile(
+                leading: const Icon(Icons.tune_rounded),
+                title: const Text('Privacy and ad choices'),
+                subtitle: const Text('Review or change your ad consent'),
+                onTap: AdsService.instance.showPrivacyOptions,
+              ),
             ListTile(
               leading: const Icon(Icons.privacy_tip_outlined),
               title: const Text('Privacy policy'),
@@ -162,6 +172,7 @@ class SettingsScreen extends StatelessWidget {
               subtitle: Text('Version ${AppInfo.version}'),
             ),
           ]),
+          ),
         ],
       ),
     );

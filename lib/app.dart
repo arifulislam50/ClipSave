@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'ads/ads_service.dart';
 import 'core/constants.dart';
 import 'core/theme/app_theme.dart';
 import 'state/settings_controller.dart';
@@ -24,7 +25,12 @@ class CopyBoxApp extends StatelessWidget {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: themeMode,
-      home: SplashScreen(next: (_) => const RootShell()),
+      // Consent (UMP) and Mobile Ads initialisation run during the splash.
+      // They never touch the clipboard or the clip database.
+      home: SplashScreen(
+        initialize: AdsService.instance.initialize,
+        next: (_) => const RootShell(),
+      ),
     );
   }
 }

@@ -70,10 +70,12 @@ Install: `adb install -r build/app/outputs/flutter-apk/app-release.apk`
 3. Play Console → Create app → upload the `.aab` to **Internal testing** first. Enrol in **Play App Signing** (the default).
 4. Fill in the store listing:
    - **Privacy policy URL:** host `PRIVACY_POLICY.md` publicly (for example GitHub Pages) and paste the link.
-   - **Data safety:** Copy Box collects **no** data and shares **no** data. Data is stored only on the device and is never transmitted. Users can delete it in the app.
-   - **App content → Permissions:** none are requested. The Quick Settings tile uses a system binding permission, not a user permission.
+   - **Data safety:** see section 7 below. Copy Box itself uploads nothing, but the AdMob SDK collects data, so the form is **not** "no data collected".
+   - **App content → Ads:** answer **Yes, my app contains ads**.
+   - **App content → Advertising ID:** declare that the app uses the advertising ID, for **Advertising or marketing**. The Google Mobile Ads SDK adds `com.google.android.gms.permission.AD_ID`.
+   - **App content → Permissions:** INTERNET and ACCESS_NETWORK_STATE (normal permissions, used by AdMob) and AD_ID. No runtime permissions. The Quick Settings tile uses a system binding permission.
    - **Target API:** 36 (set in `build.gradle.kts`). Raise it when Google raises the requirement.
-5. Suggested short description: "Private clipboard history. Save, search, favourite and organise copied text, all offline."
+5. Suggested short description: "Clipboard history that stays on your device. Save, search, favourite and organise copied text."
    In the full description, state the Android limitation honestly. For example: "Android only lets apps read the clipboard while they're open. Copy Box saves when you open it, or with one tap from the Quick Settings tile, the text-selection menu or Share."
    Don't claim "automatically saves everything you copy in the background". That would be inaccurate, and it risks a policy rejection.
 
@@ -92,7 +94,8 @@ cat build/app/intermediates/merged_manifests/release/processReleaseManifest/Andr
 
 Expected:
 
-- **No** `android.permission.INTERNET`. Only `src/debug` and `src/profile` add it, for Flutter tooling.
+- `android.permission.INTERNET` and `android.permission.ACCESS_NETWORK_STATE`, declared in the main manifest for AdMob.
+- `com.google.android.gms.permission.AD_ID`, merged in by the Google Mobile Ads SDK. Declare it in Play Console (section 4).
 - No runtime (dangerous) permissions.
 - You **may** see `com.clipsave.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`. AndroidX Core adds this signature-level permission automatically for apps targeting 33+. It grants nothing to other apps and needs no Play declaration.
 - `ClipboardCaptureActivity` has `exported="false"`. `CaptureActivity` is exported only for `SEND` / `PROCESS_TEXT` `text/plain`. `ClipTileService` is protected by `BIND_QUICK_SETTINGS_TILE`.
@@ -105,9 +108,29 @@ If anything else appears, find its source in `build/app/outputs/logs/manifest-me
 - [ ] `flutter test` passes, including `clips_controller_test.dart` (sensitivity gate on every capture path)
 - [ ] `python3 -I tool/check_structure.py .` and `python3 -I tool/verify_logic.py .` pass
 - [ ] The README manual test plan passes on real devices or emulators running **Android 10, 12, 13, 14 and 15+**, especially the tile-focus and sensitive-data rows
-- [ ] Step 5 shows no `INTERNET` permission and no unexpected components
+- [ ] Step 5 shows only INTERNET, ACCESS_NETWORK_STATE, AD_ID (plus the AndroidX signature permission) and no unexpected components
+- [ ] **AdMob IDs replaced:** `lib/core/ad_config.dart` and the `APPLICATION_ID` meta-data in `AndroidManifest.xml` contain your real IDs, not Google's test IDs (`ca-app-pub-3940256099942544…`). `tool/check_structure.py` checks that the two match.
+- [ ] The consent form appears for an EEA test user (UMP debug geography) and **Settings → Privacy and ad choices** re-opens it
+- [ ] Banner appears only on History and Folders, above the navigation bar, never covering the "Save clipboard" FAB
 - [ ] App icon looks right on the home screen, including themed icons on Android 13+
 - [ ] The privacy policy URL is reachable
+
+## 7. Play Console Data safety form (with AdMob)
+
+Copy Box itself uploads nothing: clips, folders and settings stay on the device. The Google Mobile Ads SDK does collect data, so declare what Google documents for AdMob. Check Google's current guidance before submitting, because it can change: <https://developers.google.com/admob/android/privacy/play-data-disclosure>.
+
+| Data type (Play category) | Collected | Shared | Purpose | Notes |
+|---|---|---|---|---|
+| **Device or other IDs** (incl. **advertising ID**) | Yes | Yes (Google) | Advertising or marketing; Analytics; Fraud prevention, security, and compliance | Collected by the Mobile Ads SDK |
+| **App activity → App interactions** (ad views, taps) | Yes | Yes (Google) | Advertising or marketing; Analytics | For advertising |
+| **App info and performance → Crash logs / Diagnostics** | Yes | Yes (Google) | Analytics; Fraud prevention | Per Google's AdMob disclosure |
+| **Location → Approximate location** | Declare if Google's disclosure lists it | Yes (Google) | Advertising or marketing | Derived from IP by the ad SDK |
+| Clip text, folders, settings | **No** | **No** | — | Stored only on device; never uploaded |
+
+Other answers:
+- **Is all user data encrypted in transit?** Yes (the Mobile Ads SDK uses HTTPS).
+- **Can users request deletion?** On-device data: delete in the app or uninstall. Ad data: Google's controls (advertising ID reset/delete, <https://policies.google.com/technologies/ads>).
+- **Data collection is required or optional?** Ads data collection is subject to the UMP consent where applicable.
 
 ## Troubleshooting
 

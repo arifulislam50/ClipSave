@@ -15,7 +15,7 @@ enum SensitiveReason {
       : 'This looks like a $label.';
 }
 
-/// Conservative, offline heuristics used to skip likely secrets during
+/// Conservative, on-device heuristics used to skip likely secrets during
 /// AUTOMATIC capture. It errs on the side of privacy: a false positive
 /// simply means the user saves that clip manually.
 class SensitiveDetector {

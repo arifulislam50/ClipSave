@@ -1,4 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Profile only: Flutter tooling needs INTERNET to attach DevTools. -->
+    <!-- Flutter tooling needs INTERNET to attach DevTools. The main manifest
+         also declares it (for AdMob); duplicates merge harmlessly. -->
     <uses-permission android:name="android.permission.INTERNET" />
 </manifest>

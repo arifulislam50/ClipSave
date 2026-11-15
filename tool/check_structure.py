@@ -94,8 +94,11 @@ manifest = (root / 'android/app/src/main/AndroidManifest.xml').read_text()
 for cls in re.findall(r'android:name="\.(\w+)"', manifest):
     if not (root / f'android/app/src/main/kotlin/com/clipsave/app/{cls}.kt').exists():
         errors.append(f'manifest references missing class {cls}')
-if 'android.permission.INTERNET' in manifest:
-    errors.append('release manifest must not request INTERNET')
+# Only the network permissions AdMob needs; no runtime (dangerous) permissions.
+ALLOWED_PERMISSIONS = {'android.permission.INTERNET', 'android.permission.ACCESS_NETWORK_STATE'}
+for perm in re.findall(r'<uses-permission[^>]*android:name="([^"]+)"', manifest):
+    if perm not in ALLOWED_PERMISSIONS:
+        errors.append(f'unexpected permission in main manifest: {perm}')
 
 # Channel names must match on both sides.
 kt = (root / 'android/app/src/main/kotlin/com/clipsave/app/MainActivity.kt').read_text()
@@ -140,6 +143,26 @@ if 'MAX_CLIP_LENGTH' not in inbox_kt:
     errors.append('invariant: ClipInbox.add must cap text length')
 if not re.search(r'ClipboardCaptureActivity"\s+android:exported="false"', manifest):
     errors.append('invariant: ClipboardCaptureActivity must not be exported')
+# ---- Ads isolation ----------------------------------------------------------
+ad_cfg = (root / 'lib/core/ad_config.dart').read_text()
+dart_app_id = re.search(r"androidAppId = '([^']+)'", ad_cfg).group(1)
+mf_app_id = re.search(r'com\.google\.android\.gms\.ads\.APPLICATION_ID"\s+android:value="([^"]+)"', manifest)
+if not mf_app_id or mf_app_id.group(1) != dart_app_id:
+    errors.append('AdMob App ID in AndroidManifest.xml must match AdConfig.androidAppId')
+AD_FILES = {'lib/ads/ads_service.dart', 'lib/ui/widgets/ad_banner.dart'}
+for f in dart_files:
+    src = f.read_text()
+    rel = f.relative_to(root).as_posix()
+    if 'package:google_mobile_ads' in src and rel not in AD_FILES and not rel.startswith('test/'):
+        errors.append(f'only {sorted(AD_FILES)} may import google_mobile_ads, not {rel}')
+    if rel in AD_FILES:
+        for banned in ('data/', 'clips_controller', 'clipboard_bridge', 'ClipItem', 'clip_actions'):
+            if banned in src:
+                errors.append(f'{rel} must not reference {banned} (clip data must never reach ads)')
+        for m in re.finditer(r'AdRequest\(([^)]*)\)', src):
+            if m.group(1).strip():
+                errors.append(f'{rel}: AdRequest must have no targeting arguments, found ({m.group(1).strip()})')
+
 ml = re.search(r'maxClipLength = ([\d_]+)', (root / 'lib/core/constants.dart').read_text()).group(1)
 kl = re.search(r'MAX_CLIP_LENGTH = ([\d_]+)', (root / 'android/app/src/main/kotlin/com/clipsave/app/ClipReader.kt').read_text()).group(1)
 if ml.replace('_', '') != kl.replace('_', ''):

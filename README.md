@@ -1,8 +1,10 @@
 # Copy Box
 
-A privacy-first clipboard manager for Android, built with Flutter, with native Kotlin capture components.
+A clipboard manager for Android, built with Flutter, with native Kotlin capture components.
 
-Copy Box keeps a searchable history of the text you copy. You can add favourites, put clips in folders, browse automatic categories (links, emails, phones, numbers, text) and copy any clip back with one tap. Everything stays on the device: release builds have **no INTERNET permission**, and backup and device transfer are disabled.
+Copy Box keeps a searchable history of the text you copy. You can add favourites, put clips in folders, browse automatic categories (links, emails, phones, numbers, text) and copy any clip back with one tap.
+
+**Privacy in one paragraph:** clips are stored only on the device and are never uploaded by Copy Box. Backup and device transfer are disabled for them. The app shows a banner ad from **Google AdMob** on the History and Folders screens. AdMob may collect device identifiers (such as the advertising ID) and usage data under Google's policy (<https://policies.google.com/technologies/ads>). Consent is collected with Google's User Messaging Platform before any ad loads, and users can change it in **Settings → Privacy and ad choices**. Clip text is never passed to the ad SDK, and `tool/check_structure.py` enforces this.
 
 ---
 
@@ -73,9 +75,17 @@ Flutter UI (Material 3)  ──►  State (Provider ChangeNotifiers)  ──► 
 | `lib/main.dart` | Builds repositories and controllers, registers Providers, starts `ClipsController.init()` |
 | `lib/app.dart` | `MaterialApp`, light/dark themes, global `ScaffoldMessenger` key |
 | `lib/core/constants.dart` | App info, history-limit options, clip source labels |
-| `lib/core/theme/app_theme.dart` | Material 3 `ColorScheme.fromSeed` themes and folder palette |
+| `lib/core/theme/app_theme.dart` | Copy Box theme: `ColorScheme.fromSeed(#FD79A8)` with `onPrimary` #2D3436, `CopyBoxColors` palette extension (light/dark), component themes, folder palette |
+| `lib/core/ad_config.dart` | AdMob App ID and banner unit ID (Google **test** IDs; TODO before release) |
+| `lib/ads/ads_service.dart` | UMP consent flow, then Mobile Ads init; `adsReady`, `privacyOptionsRequired`, `showPrivacyOptions()` |
+| `lib/ui/widgets/ad_banner.dart` | Large anchored adaptive banner (History and Folders only, plain `AdRequest()`) |
+| `lib/ui/widgets/app_logo.dart` | `AppLogo` CustomPaint (three stacked cards) and shared `LogoGeometry` |
+| `lib/ui/screens/splash_screen.dart` | Brand splash (5 s, 1 s with reduced motion); waits for timer + consent; never touches clipboard or DB |
+| `lib/ui/widgets/section_header.dart`, `category_visuals.dart` | Section labels; category icons, names, tints and `CategoryAvatar` |
+| `tool/generate_logo.py` | Generates all icon drawables, `assets/logo/logo.svg` and the 1024px PNGs from one geometry |
+| `assets/logo/` | `logo.svg`, `icon_1024.png` (store icon), `icon_foreground.png` |
 | `lib/core/utils/content_classifier.dart` | `ClipCategory` enum and link/email/phone/number detection |
-| `lib/core/utils/sensitive_detector.dart` | Offline OTP/password/card/key heuristics (+ Luhn) |
+| `lib/core/utils/sensitive_detector.dart` | On-device OTP/password/card/key heuristics (+ Luhn) |
 | `lib/core/utils/time_format.dart` | "5 min ago", "Yesterday 09:05", … |
 | `lib/data/db/schema.dart` | All SQL: tables, indexes, folder-count query, prune |
 | `lib/data/db/app_database.dart` | Opens the DB, enables foreign keys, migration hook |
@@ -106,8 +116,8 @@ Flutter UI (Material 3)  ──►  State (Provider ChangeNotifiers)  ──► 
 | `android/gradle/wrapper/*`, `gradlew*` | Gradle 9.3.1 wrapper |
 | `android/app/build.gradle.kts` | `com.clipsave.app`, minSdk 26, targetSdk 36, compileSdk from Flutter, Kotlin `compilerOptions` JVM 17, signing, R8 |
 | `android/app/proguard-rules.pro` | R8 keep rules |
-| `android/app/src/main/AndroidManifest.xml` | Activities, share / PROCESS_TEXT filters, tile service, no INTERNET |
-| `android/app/src/debug|profile/AndroidManifest.xml` | INTERNET for Flutter tooling only |
+| `android/app/src/main/AndroidManifest.xml` | Activities, share / PROCESS_TEXT filters, tile service, INTERNET + ACCESS_NETWORK_STATE (AdMob only), AdMob App ID |
+| `android/app/src/debug|profile/AndroidManifest.xml` | INTERNET for Flutter tooling (also in main for AdMob) |
 | `…/kotlin/com/clipsave/app/MainActivity.kt` | Flutter host, method and event channels, focus-time capture |
 | `…/ClipReader.kt` | Reads the clip, the `IS_SENSITIVE` flag and the timestamp-based change check. Writes copies, flagging secrets as sensitive. Shared size limit. |
 | `…/ClipInbox.kt` | Private queue for items captured while the UI is closed |
@@ -123,7 +133,7 @@ Flutter UI (Material 3)  ──►  State (Provider ChangeNotifiers)  ──► 
 
 ## Requirements
 
-- A current **stable Flutter** with AGP 9 support (3.44 or newer; Dart 3.6+). The Android build files meet Flutter's current minimums: **Gradle 9.3.1, AGP 9.1.1, Kotlin Gradle Plugin 2.4.10**.
+- A current **stable Flutter**: 3.38.1 or newer with Dart 3.10+ (required by `google_mobile_ads` 9.x), and with AGP 9 support (3.44+). The Android build files meet Flutter's current minimums: **Gradle 9.3.1, AGP 9.1.1, Kotlin Gradle Plugin 2.4.10**.
 - Android SDK with the platform Flutter selects (`flutter.compileSdkVersion`, currently 37) plus SDK Build Tools 36+. AGP downloads missing platforms when licences are accepted (`flutter doctor --android-licenses`).
 - JDK **17 or newer**. Gradle 9 and AGP 9 will not run on older JDKs.
 - A device or emulator running **Android 8.0 (API 26) or newer**
@@ -165,6 +175,13 @@ flutter run
 | Search / filters / folders / favourites | Use each | List updates. A deleted folder's clips remain |
 | Swipe delete | Swipe left, tap Undo | Clip restored |
 | Themes | System / Light / Dark | Whole UI switches |
+| Splash | Cold-start the app (with clipboard text from another app) | Pink splash ~5 s with progress bar, then fade to History. **No** "pasted from your clipboard" notice until History appears; auto-save happens then |
+| Reduced motion | Enable "Remove animations", cold-start | Splash ~1 s, static bar, no fade |
+| Android 12+ system splash | Cold-start on Android 12+ (light and dark mode) | System splash is pink with white cards, then the Flutter splash |
+| Consent (EEA) | Use an EEA device/VPN or UMP debug geography | Google consent form before any ad; Settings shows "Privacy and ad choices", which re-opens it |
+| Banner placement | Open History, Folders, Settings, New clip | Test banner only on History and Folders, above the nav bar; FAB fully visible above it; no ad on Settings, editor, splash |
+| Copy button | Tap the round copy button on a tile; repeat with a password-like clip on Android 13+ | Copies; system preview hides the sensitive one |
+| Themed icon | Android 13+, enable themed icons | Monochrome three-card icon |
 | Lock screen | Tap the tile while locked | Asks to unlock, then captures |
 
 Release builds and Play Store bundles: see **[BUILD.md](BUILD.md)**. Privacy policy: see **[PRIVACY_POLICY.md](PRIVACY_POLICY.md)**.
