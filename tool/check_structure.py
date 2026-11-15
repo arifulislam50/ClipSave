@@ -166,10 +166,15 @@ for f in dart_files:
 # ---- Logo geometry: Dart widget == generator ---------------------------------
 gen = (root / 'tool/generate_logo.py').read_text()
 logo = (root / 'lib/ui/widgets/app_logo.dart').read_text()
-py_cards = [tuple(map(float, c)) for c in re.findall(r'\((\d+), (\d+), (\d+), (\d+), [\d.]+\)', gen.split('CARDS =')[1].split('\n')[0])]
-dart_cards = [tuple(map(float, c)) for c in re.findall(r'Rect\.fromLTRB\((\d+), (\d+), (\d+), (\d+)\)', logo)]
-py_lines = re.findall(r'\(\((\d+), (\d+)\), \((\d+), (\d+)\)\)', gen.split('LINES =')[1].split('\n')[0])
-dart_lines = re.findall(r'\(Offset\((\d+), (\d+)\), Offset\((\d+), (\d+)\)\)', logo)
+NUM = r'(\d+(?:\.\d+)?)'
+py_cards = [tuple(map(float, c)) for c in re.findall(rf'\({NUM}, {NUM}, {NUM}, {NUM}, [\d.]+\)', gen.split('CARDS_XYWH =')[1].split(']')[0])]
+dart_cards = [tuple(map(float, c)) for c in re.findall(rf'Rect\.fromLTWH\({NUM}, {NUM}, {NUM}, {NUM}\)', logo)]
+py_lines = [tuple(map(float, c)) for c in re.findall(rf'\(\({NUM}, {NUM}\), \({NUM}, {NUM}\)\)', gen.split('LINES =')[1].split('\n')[0])]
+dart_lines = [tuple(map(float, c)) for c in re.findall(rf'\(Offset\({NUM}, {NUM}\), Offset\({NUM}, {NUM}\)\)', logo)]
+for name, pat in (('RADIUS', r'RADIUS = ([\d.]+)'), ('STROKE', r'STROKE = ([\d.]+)')):
+    dart_pat = {'RADIUS': r'cardRadius = ([\d.]+)', 'STROKE': r'stroke = ([\d.]+)'}[name]
+    if float(re.search(pat, gen).group(1)) != float(re.search(dart_pat, logo).group(1)):
+        errors.append(f'logo {name} differs between generate_logo.py and app_logo.dart')
 if not py_cards or py_cards != dart_cards:
     errors.append(f'logo cards differ: generate_logo.py {py_cards} vs app_logo.dart {dart_cards}')
 if not py_lines or py_lines != dart_lines:

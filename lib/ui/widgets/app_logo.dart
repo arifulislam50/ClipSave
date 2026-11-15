@@ -8,8 +8,11 @@ class LogoGeometry {
   LogoGeometry._();
 
   static const double grid = 108;
-  static const double cardRadius = 5;
-  static const double stroke = 2.6;
+
+  /// The artwork is the original design scaled to 78% around (54,54): every
+  /// corner is within 31 of the centre, so round launcher masks never clip it.
+  static const double cardRadius = 3.9;
+  static const double stroke = 2.0;
 
   /// Zoom applied inside [AppLogo] so the stack fills the tile nicely.
   static const double zoom = 1.25;
@@ -19,17 +22,20 @@ class LogoGeometry {
 
   /// Back, middle, front.
   static const List<Rect> cards = [
-    Rect.fromLTRB(40, 29, 84, 57),
-    Rect.fromLTRB(32, 40, 76, 68),
-    Rect.fromLTRB(24, 51, 68, 79),
+    Rect.fromLTWH(43.08, 34.5, 34.32, 21.84),
+    Rect.fromLTWH(36.84, 43.08, 34.32, 21.84),
+    Rect.fromLTWH(30.6, 51.66, 34.32, 21.84),
   ];
+
+  /// Bounding box of the three cards (centred on 54,54).
+  static const Rect bounds = Rect.fromLTRB(30.6, 34.5, 77.4, 73.5);
   static const List<double> opacities = [0.4, 0.7, 1.0];
 
   /// Text lines on the front card.
   static const List<(Offset, Offset)> lines = [
-    (Offset(31, 60), Offset(61, 60)),
-    (Offset(31, 67), Offset(61, 67)),
-    (Offset(31, 73), Offset(47, 73)),
+    (Offset(36.06, 58.68), Offset(59.46, 58.68)),
+    (Offset(36.06, 64.14), Offset(59.46, 64.14)),
+    (Offset(36.06, 68.82), Offset(48.54, 68.82)),
   ];
 }
 

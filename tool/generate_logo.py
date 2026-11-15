@@ -18,18 +18,32 @@ from pathlib import Path
 ROOT = Path(sys.argv[1] if len(sys.argv) > 1 else '.')
 PINK = '#FD79A8'
 GRID = 108
-RADIUS = 5
-# (left, top, right, bottom, opacity): back, middle, front
-CARDS = [(40, 29, 84, 57, 0.4), (32, 40, 76, 68, 0.7), (24, 51, 68, 79, 1.0)]
-LINES = [((31, 60), (61, 60)), ((31, 67), (61, 67)), ((31, 73), (47, 73))]
-STROKE = 2.6
+CENTRE = 54
+# Artwork = original design scaled to 78% around (54,54), so every corner is
+# within 31 of the centre (inside the 33-radius circular safe zone of round masks).
+RADIUS = 3.9
+# (x, y, width, height, opacity): back, middle, front
+CARDS_XYWH = [(43.08, 34.5, 34.32, 21.84, 0.4),
+              (36.84, 43.08, 34.32, 21.84, 0.7),
+              (30.6, 51.66, 34.32, 21.84, 1.0)]
+CARDS = [(x, y, round(x + w, 2), round(y + h, 2), a) for x, y, w, h, a in CARDS_XYWH]
+LINES = [((36.06, 58.68), (59.46, 58.68)), ((36.06, 64.14), (59.46, 64.14)), ((36.06, 68.82), (48.54, 68.82))]
+STROKE = 2.0
+SAFE_RADIUS = 31
 LOGO_ZOOM = 1.25          # AppLogo / logo.svg
 TILE_RADIUS = 0.24        # AppLogo tile corner radius, fraction of size
-SPLASH_SCALE = 0.85       # keeps the stack inside the Android 12 splash icon circle
 
 
 def fmt(v):
-    return f'{v:g}'
+    return f'{round(v, 3):g}'
+
+
+# Self-check: centred, and inside the safe circle.
+import math
+_xs = [c[0] for c in CARDS] + [c[2] for c in CARDS]
+_ys = [c[1] for c in CARDS] + [c[3] for c in CARDS]
+assert abs((min(_xs) + max(_xs)) / 2 - CENTRE) < 1e-6 and abs((min(_ys) + max(_ys)) / 2 - CENTRE) < 1e-6, 'artwork not centred'
+assert max(math.hypot(x - CENTRE, y - CENTRE) for l, t, r, b, _ in CARDS for x in (l, r) for y in (t, b)) <= SAFE_RADIUS, 'corner outside safe radius'
 
 
 def rrect_path(l, t, r, b, rad=RADIUS):
@@ -67,7 +81,7 @@ def line_paths(indent='    '):
         out += (f'{indent}<path\n{indent}    android:strokeColor="{PINK}"\n'
                 f'{indent}    android:strokeWidth="{fmt(STROKE)}"\n'
                 f'{indent}    android:strokeLineCap="round"\n'
-                f'{indent}    android:pathData="M{x1},{y1} L{x2},{y2}" />\n')
+                f'{indent}    android:pathData="M{fmt(x1)},{fmt(y1)} L{fmt(x2)},{fmt(y2)}" />\n')
     return out
 
 
@@ -94,7 +108,7 @@ write(res + 'ic_launcher_monochrome.xml', vector(108, card_paths(),
       'Android 13+ themed icon: the same cards in one colour, no lines.'))
 write(res + 'ic_tile_clip.xml', vector(24, group(card_paths(), translateX=-27, translateY=-27, scaleX=1.5, scaleY=1.5),
       'Quick Settings tile glyph (system-tinted): the cards, no lines.'))
-write(res + 'ic_splash_icon.xml', vector(108, group(card_paths(), pivotX=54, pivotY=54, scaleX=SPLASH_SCALE, scaleY=SPLASH_SCALE),
+write(res + 'ic_splash_icon.xml', vector(108, card_paths(),
       'Android 12+ system splash icon: white cards on the #FD79A8 splash background.'))
 
 # ---- SVG (rounded tile, AppLogo zoom) ---------------------------------------
@@ -103,7 +117,7 @@ svg_cards = ''.join(
     f'    <path d="{rrect_path(l, t, r, b)}" fill="#FFFFFF"{"" if a == 1 else f" fill-opacity=\"{fmt(a)}\""}/>\n'
     for l, t, r, b, a in CARDS)
 svg_lines = ''.join(
-    f'    <path d="M{x1},{y1} L{x2},{y2}" stroke="{PINK}" stroke-width="{fmt(STROKE)}" stroke-linecap="round"/>\n'
+    f'    <path d="M{fmt(x1)},{fmt(y1)} L{fmt(x2)},{fmt(y2)}" stroke="{PINK}" stroke-width="{fmt(STROKE)}" stroke-linecap="round"/>\n'
     for (x1, y1), (x2, y2) in LINES)
 write('assets/logo/logo.svg', f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {GRID} {GRID}" width="512" height="512">
   <title>Copy Box</title>

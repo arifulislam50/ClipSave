@@ -38,9 +38,9 @@ class _SplashScreenState extends State<SplashScreen>
   /// Width the three-card stack should occupy on screen.
   static const double _stackWidth = 156;
 
-  /// AppLogo size whose card stack is [_stackWidth] wide (cards span 60 of 108 grid units, zoomed 1.25x).
+  /// AppLogo size whose card stack is [_stackWidth] wide.
   static const double _logoSize =
-      _stackWidth * LogoGeometry.grid / (60 * LogoGeometry.zoom);
+      _stackWidth * LogoGeometry.grid / (46.8 * LogoGeometry.zoom);
 
   @override
   void didChangeDependencies() {
