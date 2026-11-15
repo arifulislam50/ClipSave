@@ -5,6 +5,7 @@ import '../../data/models/clip_filter.dart';
 import '../../state/clips_controller.dart';
 import '../../state/settings_controller.dart';
 import '../actions/clip_actions.dart';
+import '../widgets/app_logo.dart';
 import '../widgets/capture_info_card.dart';
 import '../widgets/clip_tile.dart';
 import '../widgets/empty_state.dart';
@@ -22,7 +23,15 @@ class HistoryScreen extends StatelessWidget {
         context.select<SettingsController, bool>((s) => s.guideDismissed);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Copy Box'),
+        titleSpacing: 16,
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppLogo(size: 32, semanticLabel: null),
+            SizedBox(width: 10),
+            Text('Copy Box', style: TextStyle(fontWeight: FontWeight.w600)),
+          ],
+        ),
         actions: [
           IconButton(
             tooltip: 'New clip',

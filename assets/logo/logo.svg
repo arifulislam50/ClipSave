@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="512" height="512">
+  <title>Copy Box</title>
+  <rect width="108" height="108" rx="25.92" fill="#FD79A8"/>
+  <g transform="translate(54 54) scale(1.25) translate(-54 -54)">
+    <path d="M45,29 H79 Q84,29 84,34 V52 Q84,57 79,57 H45 Q40,57 40,52 V34 Q40,29 45,29 Z" fill="#FFFFFF" fill-opacity="0.4"/>
+    <path d="M37,40 H71 Q76,40 76,45 V63 Q76,68 71,68 H37 Q32,68 32,63 V45 Q32,40 37,40 Z" fill="#FFFFFF" fill-opacity="0.7"/>
+    <path d="M29,51 H63 Q68,51 68,56 V74 Q68,79 63,79 H29 Q24,79 24,74 V56 Q24,51 29,51 Z" fill="#FFFFFF"/>
+    <path d="M31,60 L61,60" stroke="#FD79A8" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M31,67 L61,67" stroke="#FD79A8" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M31,73 L47,73" stroke="#FD79A8" stroke-width="2.6" stroke-linecap="round"/>
+  </g>
+</svg>
