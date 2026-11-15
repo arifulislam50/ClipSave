@@ -43,7 +43,9 @@ class LogoGeometry {
 ///
 /// With a [background] it draws a rounded tile (corner radius 24% of [size]).
 /// With `background: null` it draws only the cards, for use on a coloured
-/// surface (the splash screen); the card lines then use [lineColor].
+/// surface; the card lines then use [lineColor].
+/// [AppLogo.artwork] sizes the widget to the card stack itself (no padding),
+/// so it can be centred exactly (the splash screen).
 class AppLogo extends StatelessWidget {
   const AppLogo({
     super.key,
@@ -52,8 +54,20 @@ class AppLogo extends StatelessWidget {
     this.foreground = Colors.white,
     this.lineColor,
     this.semanticLabel = 'Copy Box logo',
-  });
+  }) : _artworkOnly = false;
 
+  /// Just the three cards, exactly [width] wide; height follows the artwork.
+  const AppLogo.artwork({
+    super.key,
+    required double width,
+    this.foreground = Colors.white,
+    this.lineColor = AppColors.primary,
+    this.semanticLabel = 'Copy Box logo',
+  })  : size = width,
+        background = null,
+        _artworkOnly = true;
+
+  final bool _artworkOnly;
   final double size;
   final Color? background;
   final Color foreground;
@@ -66,13 +80,17 @@ class AppLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final logo = SizedBox.square(
-      dimension: size,
+    final logo = SizedBox(
+      width: size,
+      height: _artworkOnly
+          ? size * LogoGeometry.bounds.height / LogoGeometry.bounds.width
+          : size,
       child: CustomPaint(
         painter: LogoPainter(
           background: background,
           foreground: foreground,
           lineColor: lineColor ?? background ?? AppColors.primary,
+          fitArtwork: _artworkOnly,
         ),
       ),
     );
@@ -86,11 +104,15 @@ class LogoPainter extends CustomPainter {
     required this.background,
     required this.foreground,
     required this.lineColor,
+    this.fitArtwork = false,
   });
 
   final Color? background;
   final Color foreground;
   final Color lineColor;
+
+  /// Map the card stack's bounding box onto the whole canvas.
+  final bool fitArtwork;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -105,11 +127,17 @@ class LogoPainter extends CustomPainter {
       );
     }
 
-    final scale = side / LogoGeometry.grid * LogoGeometry.zoom;
     canvas.save();
-    canvas.translate(size.width / 2, size.height / 2);
-    canvas.scale(scale);
-    canvas.translate(-LogoGeometry.grid / 2, -LogoGeometry.grid / 2);
+    if (fitArtwork) {
+      const b = LogoGeometry.bounds;
+      canvas.scale(size.width / b.width);
+      canvas.translate(-b.left, -b.top);
+    } else {
+      final scale = side / LogoGeometry.grid * LogoGeometry.zoom;
+      canvas.translate(size.width / 2, size.height / 2);
+      canvas.scale(scale);
+      canvas.translate(-LogoGeometry.grid / 2, -LogoGeometry.grid / 2);
+    }
 
     for (var i = 0; i < LogoGeometry.cards.length; i++) {
       canvas.drawRRect(
@@ -138,5 +166,6 @@ class LogoPainter extends CustomPainter {
   bool shouldRepaint(LogoPainter oldDelegate) =>
       oldDelegate.background != background ||
       oldDelegate.foreground != foreground ||
-      oldDelegate.lineColor != lineColor;
+      oldDelegate.lineColor != lineColor ||
+      oldDelegate.fitArtwork != fitArtwork;
 }

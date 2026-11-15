@@ -87,6 +87,35 @@ void main() {
     });
   });
 
+  testWidgets('splash content is centred horizontally and vertically', (tester) async {
+    await tester.pumpWidget(_host(SplashScreen(next: (_) => const Text('HOME'))));
+    final screen = tester.getRect(find.byType(Scaffold));
+    final logo = tester.getRect(find.byType(AppLogo));
+    final footer = tester.getRect(find.text('Your clips stay on your device'));
+    expect(logo.width, 156);
+    for (final finder in [
+      find.byType(AppLogo),
+      find.text('Copy Box'),
+      find.text('Save everything you copy'),
+      find.byType(LinearProgressIndicator),
+      find.text('Your clips stay on your device'),
+    ]) {
+      expect(tester.getCenter(finder).dx, closeTo(screen.center.dx, 0.5));
+    }
+    // The whole group (logo top .. footer bottom) is vertically centred.
+    expect((logo.top + footer.bottom) / 2, closeTo(screen.center.dy, 0.5));
+    // Gaps: logo->title 28, title->tagline 8, tagline->bar 32, bar->footer 14.
+    final title = tester.getRect(find.text('Copy Box'));
+    final tagline = tester.getRect(find.text('Save everything you copy'));
+    final bar = tester.getRect(find.byType(LinearProgressIndicator));
+    expect(title.top - logo.bottom, closeTo(28, 0.5));
+    expect(tagline.top - title.bottom, closeTo(8, 0.5));
+    expect(bar.top - tagline.bottom, closeTo(32, 0.5));
+    expect(footer.top - bar.bottom, closeTo(14, 0.5));
+    await tester.pump(AppInfo.splashDuration);
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('AppLogo paints at the requested size', (tester) async {
     await tester.pumpWidget(_host(const Center(child: AppLogo(size: 112))));
     expect(tester.getSize(find.byType(AppLogo)), const Size(112, 112));

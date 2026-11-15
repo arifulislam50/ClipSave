@@ -13,6 +13,9 @@ import '../widgets/app_logo.dart';
 /// only do work that is safe before the history screen exists. Navigation to
 /// [next] happens once BOTH the splash duration has elapsed AND [initialize]
 /// has finished (or failed).
+///
+/// Layout: one Column, centred horizontally and vertically: logo (156 wide),
+/// 28, "Copy Box", 8, tagline, 32, progress bar, 14, footer.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({
     super.key,
@@ -27,20 +30,16 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
   AnimationController? _progress;
+  AnimationController? _logoFade;
+  Animation<double>? _logoOpacity;
   bool _started = false;
   bool _reduceMotion = false;
 
   static const Color _ink = AppColors.onPrimary;
-
-  /// Width the three-card stack should occupy on screen.
-  static const double _stackWidth = 156;
-
-  /// AppLogo size whose card stack is [_stackWidth] wide.
-  static const double _logoSize =
-      _stackWidth * LogoGeometry.grid / (46.8 * LogoGeometry.zoom);
+  static const double logoWidth = 156;
+  static const Duration _logoFadeDuration = Duration(milliseconds: 600);
 
   @override
   void didChangeDependencies() {
@@ -53,6 +52,8 @@ class _SplashScreenState extends State<SplashScreen>
         : AppInfo.splashDuration;
     if (!_reduceMotion) {
       _progress = AnimationController(vsync: this, duration: duration)..forward();
+      _logoFade = AnimationController(vsync: this, duration: _logoFadeDuration)..forward();
+      _logoOpacity = CurvedAnimation(parent: _logoFade!, curve: Curves.easeOut);
     }
     unawaited(_run(duration));
   }
@@ -82,6 +83,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void dispose() {
     _progress?.dispose();
+    _logoFade?.dispose();
     super.dispose();
   }
 
@@ -113,42 +115,50 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    const logo = AppLogo.artwork(
+      width: logoWidth,
+      foreground: Colors.white,
+      lineColor: AppColors.primary,
+      semanticLabel: null,
+    );
+    final opacity = _logoOpacity;
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.dark.copyWith(
         statusBarColor: Colors.transparent,
-        systemNavigationBarColor: AppColors.primary,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarContrastEnforced: false,
       ),
       child: Scaffold(
         backgroundColor: AppColors.primary,
-        body: SafeArea(
+        body: SizedBox.expand(
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Spacer(flex: 3),
-              const AppLogo(
-                size: _logoSize,
-                background: null,
-                foreground: Colors.white,
-                lineColor: AppColors.primary,
-                semanticLabel: null,
+              if (opacity == null)
+                logo
+              else
+                FadeTransition(opacity: opacity, child: logo),
+              const SizedBox(height: 28),
+              const Text(
+                'Copy Box',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600, color: _ink),
               ),
               const SizedBox(height: 8),
               const Text(
-                'Copy Box',
-                style: TextStyle(fontSize: 34, fontWeight: FontWeight.w600, color: _ink),
-              ),
-              const SizedBox(height: 6),
-              const Text(
                 'Save everything you copy',
+                textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: _ink),
               ),
-              const Spacer(flex: 4),
+              const SizedBox(height: 32),
               _progressBar(),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               const Text(
                 'Your clips stay on your device',
+                textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 13, color: _ink),
               ),
-              const SizedBox(height: 32),
             ],
           ),
         ),
