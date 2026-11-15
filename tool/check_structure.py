@@ -104,7 +104,8 @@ for perm in re.findall(r'<uses-permission[^>]*android:name="([^"]+)"', manifest)
 
 # Channel names must match on both sides.
 kt = (root / 'android/app/src/main/kotlin/com/clipsave/app/MainActivity.kt').read_text()
-dart = (root / 'lib/platform/clipboard_bridge.dart').read_text()
+# Every Dart file in lib/platform/ that calls the native channel.
+dart = ''.join(f.read_text() for f in sorted((root / 'lib/platform').glob('*.dart')))
 for ch in re.findall(r'"(com\.clipsave\.app/\w+)"', kt):
     if f"'{ch}'" not in dart: errors.append(f'channel {ch} not used in Dart')
 for m in re.findall(r"invoke(?:Map|List)?Method<.*?>\(\s*'(\w+)'", dart):
@@ -218,6 +219,51 @@ for wf, flags in (('clipsave-android:', ['flutter build apk --debug']),
         for f in flags:
             if f not in block:
                 errors.append(f'codemagic.yaml {wf} missing {f}')
+
+# ---- Quick-save notification guards ------------------------------------------
+kdir = root / 'android/app/src/main/kotlin/com/clipsave/app'
+qs = (kdir / 'QuickSaveNotification.kt').read_text()
+boot = (kdir / 'BootReceiver.kt').read_text()
+all_kt = ''.join(f.read_text() for f in kdir.glob('*.kt'))
+# 1. "Save copied text" starts the capture ACTIVITY directly: an activity
+#    PendingIntent for an Intent targeting ClipboardCaptureActivity, and no
+#    broadcast/service PendingIntent anywhere (no notification trampolines).
+save_block = re.search(r'val saveIntent = Intent\(context, ClipboardCaptureActivity::class\.java\)(.*?)val savePending = PendingIntent\.getActivity\(context, REQUEST_SAVE, saveIntent', qs, re.S)
+if not save_block:
+    errors.append('quick-save: Save action must be PendingIntent.getActivity(saveIntent) with saveIntent -> ClipboardCaptureActivity')
+for bad in ('PendingIntent.getBroadcast', 'PendingIntent.getService', 'PendingIntent.getForegroundService'):
+    if bad in all_kt:
+        errors.append(f'Kotlin uses {bad}: notification actions must start the capture activity directly')
+if re.search(r'class \w+ ?: ?(?:Service|IntentService|JobService)\b', all_kt):
+    errors.append('no Service may sit between the notification and the capture activity')
+# 2. BootReceiver never reads the clipboard or opens an activity.
+for bad in ('ClipReader', 'ClipboardManager', 'primaryClip', 'CLIPBOARD_SERVICE', 'startActivity',
+            'ClipboardCaptureActivity', 'ClipInbox', 'PendingIntent'):
+    if bad in boot:
+        errors.append(f'BootReceiver must not use {bad} (it only re-posts the notification)')
+if 'QuickSaveNotification.repostIfNeeded(context)' not in boot:
+    errors.append('BootReceiver must only call QuickSaveNotification.repostIfNeeded (setting-gated)')
+# 3. Notification text contains no clip data: no clipboard/inbox access in the
+#    notification code, and title/text come only from fixed string resources.
+for bad in ('ClipReader', 'ClipInbox', 'CapturedClip', 'primaryClip', 'ClipboardManager', 'getCharSequenceExtra'):
+    if bad in qs:
+        errors.append(f'QuickSaveNotification must not touch {bad} (notification must never contain clip text)')
+for call, arg in re.findall(r'\.(setContentTitle|setContentText|bigText|setSubText|setTicker)\(([^)]*)\)', qs):
+    # (the regex stops at the first ')', so getString(...) arrives without its ')')
+    if arg.strip() not in ('title', 'text') and not re.fullmatch(
+            r'context\.getString\(R\.string\.(app_name|quick_save_\w+)', arg.strip()):
+        errors.append(f'QuickSaveNotification.{call}({arg}) must use a fixed string resource')
+for var, res in (('title', 'quick_save_title'), ('text', 'quick_save_text')):
+    if f'val {var} = context.getString(R.string.{res})' not in qs:
+        errors.append(f'QuickSaveNotification: {var} must be context.getString(R.string.{res})')
+if 'VISIBILITY_PRIVATE' not in qs or 'setPublicVersion' not in qs:
+    errors.append('QuickSaveNotification must be VISIBILITY_PRIVATE with a text-free public version')
+# 4. Manifest: permissions and a non-exported BootReceiver.
+for perm in ('android.permission.POST_NOTIFICATIONS', 'android.permission.RECEIVE_BOOT_COMPLETED'):
+    if f'<uses-permission android:name="{perm}"' not in manifest:
+        errors.append(f'manifest must declare {perm}')
+if not re.search(r'android:name="\.BootReceiver"\s+android:exported="false"', manifest):
+    errors.append('BootReceiver must be declared with exported="false"')
 
 ml = re.search(r'maxClipLength = ([\d_]+)', (root / 'lib/core/constants.dart').read_text()).group(1)
 kl = re.search(r'MAX_CLIP_LENGTH = ([\d_]+)', (root / 'android/app/src/main/kotlin/com/clipsave/app/ClipReader.kt').read_text()).group(1)

@@ -1,9 +1,11 @@
 import 'package:clipsave/ui/screens/history_screen.dart';
 import 'package:clipsave/ui/widgets/category_visuals.dart';
 import 'package:clipsave/ui/widgets/clip_tile.dart';
+import 'package:clipsave/ui/widgets/quick_save_prompt_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'helpers/fake_quick_save_bridge.dart';
 import 'helpers/history_harness.dart';
 
 void main() {
@@ -136,6 +138,36 @@ void main() {
       final date = tester.getTopLeft(find.byKey(const ValueKey<String>('clip-date'))).dy;
       final hint = tester.getTopLeft(find.text(ClipTile.collapseHint)).dy;
       expect(hint, greaterThan(date));
+      await h.close(tester);
+    });
+  });
+
+  group('quick-save card on History', () {
+    testWidgets('shown while off; "Not now" hides it and is remembered', (tester) async {
+      final h = await HistoryHarness.pump(tester, clips: ['hello'], showQuickSavePrompt: true);
+      expect(find.text(QuickSavePromptCard.message), findsOneWidget);
+      await tester.tap(find.widgetWithText(TextButton, 'Not now'));
+      await h.settle(tester);
+      expect(find.text(QuickSavePromptCard.message), findsNothing);
+      expect(h.settings.quickSavePromptDismissed, isTrue);
+      await h.close(tester);
+    });
+
+    testWidgets('"Turn on" enables it and the card disappears', (tester) async {
+      final bridge = FakeQuickSaveBridge();
+      final h = await HistoryHarness.pump(tester,
+          clips: ['hello'], showQuickSavePrompt: true, quickSave: bridge);
+      await tester.tap(find.widgetWithText(TextButton, 'Turn on'));
+      await h.settle(tester);
+      expect(bridge.calls, [true]);
+      expect(find.text(QuickSavePromptCard.message), findsNothing);
+      await h.close(tester);
+    });
+
+    testWidgets('hidden when the notification is already on', (tester) async {
+      final h = await HistoryHarness.pump(tester,
+          clips: ['hello'], showQuickSavePrompt: true, quickSave: FakeQuickSaveBridge(nativeEnabled: true));
+      expect(find.text(QuickSavePromptCard.message), findsNothing);
       await h.close(tester);
     });
   });

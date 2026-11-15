@@ -1,5 +1,15 @@
 # Changelog
 
+## Quick-save notification (PR #1)
+
+Not build-tested here (no Flutter/Android SDK).
+
+- Optional, off by default (Settings → CAPTURE → **Quick-save notification**). A silent, ongoing notification with **Save copied text** (opens the invisible capture activity directly, like the tile; source "Notification") and **Open Copy Box**. Fixed text only, never clip content; private on the lock screen.
+- Asks for POST_NOTIFICATIONS only when turned on, and only on Android 13+. If denied (including "don't ask again"), the switch stays off and the snackbar offers **Open settings**.
+- The setting is stored natively. `BootReceiver` re-posts the notification after a reboot or update only if it is on. The app re-posts it on open if it is on but missing.
+- History card: "Save without opening the app…" with **Turn on** / **Not now** (remembered).
+- Privacy, README and BUILD texts updated. New structure guards; new settings, card, row and label tests.
+
 ## Copy Box: New clip, expandable tiles, dates, fast start, small APK (PR #1)
 
 Not build-tested here (no Flutter/Android SDK); APK/AAB sizes not measured. See BUILD.md §8.

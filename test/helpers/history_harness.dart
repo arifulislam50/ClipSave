@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'fake_bridge.dart';
+import 'fake_quick_save_bridge.dart';
 
 /// Pumps the real HistoryScreen against an in-memory SQLite database and a
 /// fake native bridge. Database work runs inside `tester.runAsync`.
@@ -29,17 +30,25 @@ class HistoryHarness {
     WidgetTester tester, {
     List<String> clips = const [],
     bool autoCapture = true,
+    bool showQuickSavePrompt = false,
+    FakeQuickSaveBridge? quickSave,
   }) async {
     if (!_ffiReady) {
       sqfliteFfiInit();
       databaseFactory = databaseFactoryFfi;
       _ffiReady = true;
     }
-    SharedPreferences.setMockInitialValues({'auto_capture': autoCapture});
+    // The first-run cards are hidden by default so tiles stay on screen.
+    SharedPreferences.setMockInitialValues({
+      'auto_capture': autoCapture,
+      'guide_dismissed': true,
+      'quick_save_prompt_dismissed': !showQuickSavePrompt,
+    });
     final bridge = FakeBridge();
     late HistoryHarness harness;
     await tester.runAsync(() async {
-      final settings = SettingsController(await SettingsRepository.create());
+      final settings =
+          SettingsController(await SettingsRepository.create(), quickSave ?? FakeQuickSaveBridge());
       final db = AppDatabase(path: inMemoryDatabasePath);
       final controller = ClipsController(
           repository: ClipRepository(db), bridge: bridge, settings: settings);
