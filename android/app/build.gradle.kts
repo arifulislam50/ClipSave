@@ -18,16 +18,14 @@ if (hasReleaseKeystore) {
 
 android {
     namespace = "com.clipsave.app"
-    compileSdk = 36
+    // Follow the installed Flutter SDK (AGP 9.1.1 supports compileSdk 37) so
+    // plugin AARs never require a newer compileSdk than the app uses.
+    compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
     defaultConfig {
@@ -66,6 +64,13 @@ android {
                 "proguard-rules.pro",
             )
         }
+    }
+}
+
+// Replaces android.kotlinOptions {}, which KGP 2.2+ rejects (Flutter AGP 9 migration guide).
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
 }
 

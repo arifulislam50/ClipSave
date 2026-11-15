@@ -3,10 +3,21 @@
 ## 1. Check your toolchain
 
 ```bash
-flutter --version      # 3.27+
-flutter doctor -v      # Android toolchain must be ✓, with SDK platform 36
-java -version          # 17
+flutter --version      # current stable (3.44+, with AGP 9 support)
+flutter doctor -v      # Android toolchain must be ✓, licences accepted
+java -version          # 17 or newer (required by Gradle 9 / AGP 9)
 ```
+
+Android build toolchain pinned in this repo, matching Flutter's minimum supported versions:
+
+| Component | Version | File |
+|-----------|---------|------|
+| Gradle wrapper | 9.3.1 | `android/gradle/wrapper/gradle-wrapper.properties` |
+| Android Gradle Plugin | 9.1.1 (requires Gradle ≥ 9.3.1; AGP 9.2+ would need Gradle 9.4.1) | `android/settings.gradle.kts` |
+| Kotlin Gradle Plugin | 2.4.10 | `android/settings.gradle.kts` |
+| AGP 9 flags | `android.newDsl=false`, `android.builtInKotlin=false` | `android/gradle.properties` |
+
+When a future Flutter raises these minimums again, `flutter build` reports the required version. Bump the same three files, and follow docs.flutter.dev → *Migrating to AGP 9* and *built-in Kotlin*.
 
 If Gradle complains that `local.properties` is missing, run `flutter pub get` once. If it's still missing, run
 `flutter create . --platforms=android --org com.clipsave --project-name clipsave`. Both only add missing files.
@@ -103,8 +114,9 @@ If anything else appears, find its source in `build/app/outputs/logs/manifest-me
 | Problem | Fix |
 |---------|-----|
 | `flutter.sdk not set in local.properties` | Run `flutter pub get`, or create `android/local.properties` containing `flutter.sdk=/path/to/flutter` |
-| AGP / Kotlin version errors with a newer Flutter | Bump versions in `android/settings.gradle.kts` to whatever `flutter create` generates for your Flutter version |
+| "Gradle / AGP / KGP version is lower than Flutter's minimum" | Raise the version it names. Gradle goes in `gradle-wrapper.properties`; AGP and KGP go in `android/settings.gradle.kts`. Keep AGP's minimum Gradle in mind (AGP 9.1 → 9.3.1, 9.2 → 9.4.1, 9.3 → 9.5.0) |
+| "Unsupported class file major version" / Gradle won't start | The build machine's JDK is older than 17. On Codemagic, add `java: 17` (or 21) under `environment` |
 | R8 "Missing classes" warning | Add the suggested `-dontwarn` lines from `build/app/outputs/mapping/release/missing_rules.txt` to `proguard-rules.pro` |
 | The tile toast says "Could not read the clipboard" | Focus didn't arrive within 2.5 s (seen on some OEM ROMs). Tap the tile again, or open ClipSave and use "Save clipboard". Please report the device model |
 | The tile does nothing on Android 15+ | Background-activity-launch rules may have blocked it. Check `adb logcat \| grep -i "Background activity launch blocked"`. The tile already opts in through `ActivityOptions`; if it is still blocked, report the Android build |
-| Kotlin warns about `MODE_BACKGROUND_ACTIVITY_START_ALLOWED` being deprecated (compileSdk 36) | Expected and suppressed. It is the opt-in that works on API 34 and 35 |
+| Kotlin warns about `MODE_BACKGROUND_ACTIVITY_START_ALLOWED` being deprecated (compileSdk 36+) | Expected and suppressed. It is the opt-in that works on API 34 and 35 |

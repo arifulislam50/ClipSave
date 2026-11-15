@@ -1,5 +1,16 @@
 # Changelog
 
+## Android build toolchain upgrade
+
+Fixes the Codemagic failure "Gradle version (8.12.0) is lower than Flutter's minimum supported version of 9.3.1". Values match Flutter's current minimums (flutter/flutter#193813: AGP 9.1.1, Gradle 9.3.1, KGP 2.4.10). **Not build-tested locally**; the next Codemagic build is the first real check.
+
+- `android/gradle/wrapper/gradle-wrapper.properties`: Gradle 8.12 → **9.3.1**
+- `android/settings.gradle.kts`: AGP 8.9.1 → **9.1.1** (the newest AGP whose minimum Gradle is 9.3.1); Kotlin Gradle Plugin 2.1.0 → **2.4.10**
+- `android/app/build.gradle.kts`: `kotlinOptions {}` (an error since KGP 2.2) replaced by top-level `kotlin { compilerOptions { jvmTarget = JVM_17 } }`; `compileSdk` now follows `flutter.compileSdkVersion`
+- `android/gradle.properties`: `android.newDsl=false`, `android.builtInKotlin=false`, as Flutter's AGP 9 migration guide requires for now
+- `README.md`, `BUILD.md`: toolchain requirements updated (JDK 17+)
+- Not changed: Dart/Kotlin app sources, the manifest, `pubspec.yaml`, `codemagic.yaml`. No version checks are skipped or suppressed.
+
 ## 1.0.0 (unreleased): security and functionality review
 
 **Not build-tested.** No Flutter or Android SDK was available. Run `flutter analyze`, `flutter test` and the README device test plan before release.

@@ -100,11 +100,11 @@ Flutter UI (Material 3)  ──►  State (Provider ChangeNotifiers)  ──► 
 | `test/*.dart` | Unit tests: detector, classifier, time format, repository (real SQLite via ffi), controller capture paths with a fake native bridge (`clips_controller_test.dart`) |
 | `tool/verify_logic.py` | SDK-free check: runs the Dart regexes and SQL in Python/SQLite |
 | `tool/check_structure.py` | SDK-free check: imports, brackets, XML, resource refs, channel and method names, security invariants |
-| `android/settings.gradle.kts` | Flutter plugin loader; AGP 8.9.1, Kotlin 2.1.0 |
+| `android/settings.gradle.kts` | Flutter plugin loader; AGP 9.1.1, Kotlin Gradle Plugin 2.4.10 |
 | `android/build.gradle.kts` | Repositories, shared build dir |
-| `android/gradle.properties` | JVM args, AndroidX |
-| `android/gradle/wrapper/*`, `gradlew*` | Gradle 8.12 wrapper |
-| `android/app/build.gradle.kts` | `com.clipsave.app`, minSdk 26, target/compile 36, signing, R8 |
+| `android/gradle.properties` | JVM args, AndroidX, AGP 9 compatibility flags (`android.newDsl=false`, `android.builtInKotlin=false`) |
+| `android/gradle/wrapper/*`, `gradlew*` | Gradle 9.3.1 wrapper |
+| `android/app/build.gradle.kts` | `com.clipsave.app`, minSdk 26, targetSdk 36, compileSdk from Flutter, Kotlin `compilerOptions` JVM 17, signing, R8 |
 | `android/app/proguard-rules.pro` | R8 keep rules |
 | `android/app/src/main/AndroidManifest.xml` | Activities, share / PROCESS_TEXT filters, tile service, no INTERNET |
 | `android/app/src/debug|profile/AndroidManifest.xml` | INTERNET for Flutter tooling only |
@@ -123,9 +123,9 @@ Flutter UI (Material 3)  ──►  State (Provider ChangeNotifiers)  ──► 
 
 ## Requirements
 
-- Flutter **3.27 or newer** (Dart 3.6+)
-- Android SDK with platform **36** and build-tools installed (`flutter doctor` must be clean)
-- JDK 17
+- A current **stable Flutter** with AGP 9 support (3.44 or newer; Dart 3.6+). The Android build files meet Flutter's current minimums: **Gradle 9.3.1, AGP 9.1.1, Kotlin Gradle Plugin 2.4.10**.
+- Android SDK with the platform Flutter selects (`flutter.compileSdkVersion`, currently 37) plus SDK Build Tools 36+. AGP downloads missing platforms when licences are accepted (`flutter doctor --android-licenses`).
+- JDK **17 or newer**. Gradle 9 and AGP 9 will not run on older JDKs.
 - A device or emulator running **Android 8.0 (API 26) or newer**
 
 ## Run it
