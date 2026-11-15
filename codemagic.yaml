@@ -1,6 +1,6 @@
 workflows:
   clipsave-android:
-    name: ClipSave Android APK
+    name: Copy Box Android APK
     max_build_duration: 120
     instance_type: mac_mini_m2
     environment:
@@ -12,3 +12,71 @@ workflows:
         script: flutter build apk --debug
     artifacts:
       - build/app/outputs/flutter-apk/*.apk
+
+  # Release APK, arm64 only, as small as possible: obfuscated Dart with the
+  # debug symbols split off (kept as an artifact for crash de-obfuscation),
+  # icon fonts tree-shaken, R8 minify + resource shrinking (build.gradle.kts).
+  # TODO(release): without android/key.properties this APK is signed with the
+  # debug key (fine for testing, not for the Play Store).
+  copybox-release-apk:
+    name: Copy Box release APK (arm64)
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+    scripts:
+      - name: Get Flutter dependencies
+        script: flutter pub get
+      - name: Build release APK (arm64, obfuscated)
+        script: |
+          flutter build apk --release --target-platform android-arm64 \
+            --split-debug-info=build/symbols --obfuscate --tree-shake-icons
+      - name: Report APK size
+        script: |
+          ls -l build/app/outputs/flutter-apk/
+          du -h build/app/outputs/flutter-apk/app-release.apk
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
+      - build/app/outputs/mapping/release/mapping.txt
+      - build/symbols/**
+
+  # Play Store bundle (all ABIs; Play delivers per-device APKs).
+  copybox-release-aab:
+    name: Copy Box release AAB (Play Store)
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+    scripts:
+      - name: Get Flutter dependencies
+        script: flutter pub get
+      - name: Build release app bundle (obfuscated)
+        script: |
+          flutter build appbundle --release \
+            --split-debug-info=build/symbols --obfuscate
+      - name: Report AAB size
+        script: du -h build/app/outputs/bundle/release/app-release.aab
+    artifacts:
+      - build/app/outputs/bundle/release/*.aab
+      - build/app/outputs/mapping/release/mapping.txt
+      - build/symbols/**
+
+  # Run on demand to see what makes the APK big. --analyze-size cannot be
+  # combined with --obfuscate/--split-debug-info, so this is a separate build.
+  copybox-size-report:
+    name: Copy Box APK size report (arm64)
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+    scripts:
+      - name: Get Flutter dependencies
+        script: flutter pub get
+      - name: Analyze size
+        script: |
+          flutter build apk --release --target-platform android-arm64 --analyze-size \
+            --code-size-directory=build/code-size
+          ls -l build/app/outputs/flutter-apk/
+    artifacts:
+      - build/code-size/**
+      - build/app/outputs/flutter-apk/app-release.apk

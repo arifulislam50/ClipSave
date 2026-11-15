@@ -94,15 +94,21 @@ manifest = (root / 'android/app/src/main/AndroidManifest.xml').read_text()
 for cls in re.findall(r'android:name="\.(\w+)"', manifest):
     if not (root / f'android/app/src/main/kotlin/com/clipsave/app/{cls}.kt').exists():
         errors.append(f'manifest references missing class {cls}')
-if 'android.permission.INTERNET' in manifest:
-    errors.append('release manifest must not request INTERNET')
+# AdMob network permissions + the quick-save notification (boot re-post and,
+# on Android 13+, the notification permission requested only when turned on).
+ALLOWED_PERMISSIONS = {'android.permission.INTERNET', 'android.permission.ACCESS_NETWORK_STATE',
+                       'android.permission.RECEIVE_BOOT_COMPLETED', 'android.permission.POST_NOTIFICATIONS'}
+for perm in re.findall(r'<uses-permission[^>]*android:name="([^"]+)"', manifest):
+    if perm not in ALLOWED_PERMISSIONS:
+        errors.append(f'unexpected permission in main manifest: {perm}')
 
 # Channel names must match on both sides.
 kt = (root / 'android/app/src/main/kotlin/com/clipsave/app/MainActivity.kt').read_text()
-dart = (root / 'lib/platform/clipboard_bridge.dart').read_text()
+# Every Dart file in lib/platform/ that calls the native channel.
+dart = ''.join(f.read_text() for f in sorted((root / 'lib/platform').glob('*.dart')))
 for ch in re.findall(r'"(com\.clipsave\.app/\w+)"', kt):
     if f"'{ch}'" not in dart: errors.append(f'channel {ch} not used in Dart')
-for m in re.findall(r"invokeMethod<[^>]+>\(\s*'(\w+)'", dart):
+for m in re.findall(r"invoke(?:Map|List)?Method<.*?>\(\s*'(\w+)'", dart):
     if f'"{m}"' not in kt: errors.append(f'method {m} not handled in Kotlin')
 
 # ---- Security invariants -------------------------------------------------
@@ -140,6 +146,125 @@ if 'MAX_CLIP_LENGTH' not in inbox_kt:
     errors.append('invariant: ClipInbox.add must cap text length')
 if not re.search(r'ClipboardCaptureActivity"\s+android:exported="false"', manifest):
     errors.append('invariant: ClipboardCaptureActivity must not be exported')
+# ---- Ads isolation ----------------------------------------------------------
+ad_cfg = (root / 'lib/core/ad_config.dart').read_text()
+dart_app_id = re.search(r"androidAppId = '([^']+)'", ad_cfg).group(1)
+mf_app_id = re.search(r'com\.google\.android\.gms\.ads\.APPLICATION_ID"\s+android:value="([^"]+)"', manifest)
+if not mf_app_id or mf_app_id.group(1) != dart_app_id:
+    errors.append('AdMob App ID in AndroidManifest.xml must match AdConfig.androidAppId')
+AD_FILES = {'lib/ads/ads_service.dart', 'lib/ui/widgets/ad_banner.dart'}
+for f in dart_files:
+    src = f.read_text()
+    rel = f.relative_to(root).as_posix()
+    if 'package:google_mobile_ads' in src and rel not in AD_FILES and not rel.startswith('test/'):
+        errors.append(f'only {sorted(AD_FILES)} may import google_mobile_ads, not {rel}')
+    if rel in AD_FILES:
+        for banned in ('data/', 'clips_controller', 'clipboard_bridge', 'ClipItem', 'clip_actions'):
+            if banned in src:
+                errors.append(f'{rel} must not reference {banned} (clip data must never reach ads)')
+        for m in re.finditer(r'AdRequest\(([^)]*)\)', src):
+            if m.group(1).strip():
+                errors.append(f'{rel}: AdRequest must have no targeting arguments, found ({m.group(1).strip()})')
+
+# ---- Logo geometry: Dart widget == generator ---------------------------------
+gen = (root / 'tool/generate_logo.py').read_text()
+logo = (root / 'lib/ui/widgets/app_logo.dart').read_text()
+NUM = r'(\d+(?:\.\d+)?)'
+py_cards = [tuple(map(float, c)) for c in re.findall(rf'\({NUM}, {NUM}, {NUM}, {NUM}, [\d.]+\)', gen.split('CARDS_XYWH =')[1].split(']')[0])]
+dart_cards = [tuple(map(float, c)) for c in re.findall(rf'Rect\.fromLTWH\({NUM}, {NUM}, {NUM}, {NUM}\)', logo)]
+py_lines = [tuple(map(float, c)) for c in re.findall(rf'\(\({NUM}, {NUM}\), \({NUM}, {NUM}\)\)', gen.split('LINES =')[1].split('\n')[0])]
+dart_lines = [tuple(map(float, c)) for c in re.findall(rf'\(Offset\({NUM}, {NUM}\), Offset\({NUM}, {NUM}\)\)', logo)]
+for name, pat in (('RADIUS', r'RADIUS = ([\d.]+)'), ('STROKE', r'STROKE = ([\d.]+)')):
+    dart_pat = {'RADIUS': r'cardRadius = ([\d.]+)', 'STROKE': r'stroke = ([\d.]+)'}[name]
+    if float(re.search(pat, gen).group(1)) != float(re.search(dart_pat, logo).group(1)):
+        errors.append(f'logo {name} differs between generate_logo.py and app_logo.dart')
+if not py_cards or py_cards != dart_cards:
+    errors.append(f'logo cards differ: generate_logo.py {py_cards} vs app_logo.dart {dart_cards}')
+if not py_lines or py_lines != dart_lines:
+    errors.append('logo lines differ between generate_logo.py and app_logo.dart')
+
+# ---- "Save clipboard" is gone: New clip replaced it ---------------------------
+for f in list(root.glob('lib/**/*.dart')) + list(root.glob('android/app/src/main/**/*.xml')) + \
+        list(root.glob('android/app/src/main/**/*.kt')) + [root / n for n in ('README.md', 'PRIVACY_POLICY.md', 'BUILD.md')]:
+    if f.exists() and 'Save clipboard' in f.read_text():
+        errors.append(f'{f}: still mentions "Save clipboard" (replaced by New clip)')
+
+# ---- APK size guards ---------------------------------------------------------
+pub = (root / 'pubspec.yaml').read_text()
+flutter_section = pub.split('\nflutter:\n', 1)[1] if '\nflutter:\n' in pub else ''
+if re.search(r'^\s+assets:', flutter_section, re.M) or 'assets/logo' in flutter_section:
+    errors.append('pubspec.yaml must not register assets (assets/logo/* are design files, not app assets)')
+if re.search(r'^\s+fonts:', flutter_section, re.M):
+    errors.append('pubspec.yaml must not bundle fonts (system font only)')
+for banned in ('firebase', 'analytics', 'google_fonts', 'cupertino_icons'):
+    if re.search(rf'^\s+{banned}\w*:', pub, re.M):
+        errors.append(f'pubspec.yaml: unexpected dependency {banned}')
+gradle = (root / 'android/app/build.gradle.kts').read_text()
+for needle in ('isMinifyEnabled = true', 'isShrinkResources = true', 'useLegacyPackaging = false',
+               'localeFilters += "en"', 'abiFilters += "arm64-v8a"', 'DebugProbesKt.bin'):
+    if needle not in gradle:
+        errors.append(f'build.gradle.kts: missing size setting {needle!r}')
+rules = (root / 'android/app/proguard-rules.pro').read_text()
+for keep in ('-keep class com.clipsave.app.** { *; }', '-keep class io.flutter.plugins.googlemobileads.** { *; }'):
+    if keep not in rules:
+        errors.append(f'proguard-rules.pro: missing {keep}')
+cm = (root / 'codemagic.yaml').read_text()
+for wf, flags in (('clipsave-android:', ['flutter build apk --debug']),
+                  ('copybox-release-apk:', ['--target-platform android-arm64', '--split-debug-info=build/symbols', '--obfuscate', '--tree-shake-icons']),
+                  ('copybox-release-aab:', ['flutter build appbundle --release', '--split-debug-info=build/symbols', '--obfuscate'])):
+    if wf not in cm:
+        errors.append(f'codemagic.yaml: missing workflow {wf}')
+    else:
+        block = cm.split(wf, 1)[1].split('\n  copybox-', 1)[0]
+        for f in flags:
+            if f not in block:
+                errors.append(f'codemagic.yaml {wf} missing {f}')
+
+# ---- Quick-save notification guards ------------------------------------------
+kdir = root / 'android/app/src/main/kotlin/com/clipsave/app'
+qs = (kdir / 'QuickSaveNotification.kt').read_text()
+boot = (kdir / 'BootReceiver.kt').read_text()
+all_kt = ''.join(f.read_text() for f in kdir.glob('*.kt'))
+# 1. "Save copied text" starts the capture ACTIVITY directly: an activity
+#    PendingIntent for an Intent targeting ClipboardCaptureActivity, and no
+#    broadcast/service PendingIntent anywhere (no notification trampolines).
+save_block = re.search(r'val saveIntent = Intent\(context, ClipboardCaptureActivity::class\.java\)(.*?)val savePending = PendingIntent\.getActivity\(context, REQUEST_SAVE, saveIntent', qs, re.S)
+if not save_block:
+    errors.append('quick-save: Save action must be PendingIntent.getActivity(saveIntent) with saveIntent -> ClipboardCaptureActivity')
+for bad in ('PendingIntent.getBroadcast', 'PendingIntent.getService', 'PendingIntent.getForegroundService'):
+    if bad in all_kt:
+        errors.append(f'Kotlin uses {bad}: notification actions must start the capture activity directly')
+if re.search(r'class \w+ ?: ?(?:Service|IntentService|JobService)\b', all_kt):
+    errors.append('no Service may sit between the notification and the capture activity')
+# 2. BootReceiver never reads the clipboard or opens an activity.
+for bad in ('ClipReader', 'ClipboardManager', 'primaryClip', 'CLIPBOARD_SERVICE', 'startActivity',
+            'ClipboardCaptureActivity', 'ClipInbox', 'PendingIntent'):
+    if bad in boot:
+        errors.append(f'BootReceiver must not use {bad} (it only re-posts the notification)')
+if 'QuickSaveNotification.repostIfNeeded(context)' not in boot:
+    errors.append('BootReceiver must only call QuickSaveNotification.repostIfNeeded (setting-gated)')
+# 3. Notification text contains no clip data: no clipboard/inbox access in the
+#    notification code, and title/text come only from fixed string resources.
+for bad in ('ClipReader', 'ClipInbox', 'CapturedClip', 'primaryClip', 'ClipboardManager', 'getCharSequenceExtra'):
+    if bad in qs:
+        errors.append(f'QuickSaveNotification must not touch {bad} (notification must never contain clip text)')
+for call, arg in re.findall(r'\.(setContentTitle|setContentText|bigText|setSubText|setTicker)\(([^)]*)\)', qs):
+    # (the regex stops at the first ')', so getString(...) arrives without its ')')
+    if arg.strip() not in ('title', 'text') and not re.fullmatch(
+            r'context\.getString\(R\.string\.(app_name|quick_save_\w+)', arg.strip()):
+        errors.append(f'QuickSaveNotification.{call}({arg}) must use a fixed string resource')
+for var, res in (('title', 'quick_save_title'), ('text', 'quick_save_text')):
+    if f'val {var} = context.getString(R.string.{res})' not in qs:
+        errors.append(f'QuickSaveNotification: {var} must be context.getString(R.string.{res})')
+if 'VISIBILITY_PRIVATE' not in qs or 'setPublicVersion' not in qs:
+    errors.append('QuickSaveNotification must be VISIBILITY_PRIVATE with a text-free public version')
+# 4. Manifest: permissions and a non-exported BootReceiver.
+for perm in ('android.permission.POST_NOTIFICATIONS', 'android.permission.RECEIVE_BOOT_COMPLETED'):
+    if f'<uses-permission android:name="{perm}"' not in manifest:
+        errors.append(f'manifest must declare {perm}')
+if not re.search(r'android:name="\.BootReceiver"\s+android:exported="false"', manifest):
+    errors.append('BootReceiver must be declared with exported="false"')
+
 ml = re.search(r'maxClipLength = ([\d_]+)', (root / 'lib/core/constants.dart').read_text()).group(1)
 kl = re.search(r'MAX_CLIP_LENGTH = ([\d_]+)', (root / 'android/app/src/main/kotlin/com/clipsave/app/ClipReader.kt').read_text()).group(1)
 if ml.replace('_', '') != kl.replace('_', ''):

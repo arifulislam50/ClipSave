@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="512" height="512">
+  <title>Copy Box</title>
+  <rect width="108" height="108" rx="25.92" fill="#FD79A8"/>
+  <g transform="translate(54 54) scale(1.25) translate(-54 -54)">
+    <path d="M46.98,34.5 H73.5 Q77.4,34.5 77.4,38.4 V52.44 Q77.4,56.34 73.5,56.34 H46.98 Q43.08,56.34 43.08,52.44 V38.4 Q43.08,34.5 46.98,34.5 Z" fill="#FFFFFF" fill-opacity="0.4"/>
+    <path d="M40.74,43.08 H67.26 Q71.16,43.08 71.16,46.98 V61.02 Q71.16,64.92 67.26,64.92 H40.74 Q36.84,64.92 36.84,61.02 V46.98 Q36.84,43.08 40.74,43.08 Z" fill="#FFFFFF" fill-opacity="0.7"/>
+    <path d="M34.5,51.66 H61.02 Q64.92,51.66 64.92,55.56 V69.6 Q64.92,73.5 61.02,73.5 H34.5 Q30.6,73.5 30.6,69.6 V55.56 Q30.6,51.66 34.5,51.66 Z" fill="#FFFFFF"/>
+    <path d="M36.06,58.68 L59.46,58.68" stroke="#FD79A8" stroke-width="2" stroke-linecap="round"/>
+    <path d="M36.06,64.14 L59.46,64.14" stroke="#FD79A8" stroke-width="2" stroke-linecap="round"/>
+    <path d="M36.06,68.82 L48.54,68.82" stroke="#FD79A8" stroke-width="2" stroke-linecap="round"/>
+  </g>
+</svg>

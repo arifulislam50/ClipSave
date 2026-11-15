@@ -17,15 +17,19 @@ class SettingsRepository {
   static const _kSkipSensitive = 'skip_sensitive';
   static const _kHistoryLimit = 'history_limit';
   static const _kGuideDismissed = 'guide_dismissed';
+  static const _kQuickSavePromptDismissed = 'quick_save_prompt_dismissed';
 
+  /// Defaults to dark until the user picks something; a saved choice
+  /// (including "system") is always restored.
   ThemeMode get themeMode {
     switch (_prefs.getString(_kTheme)) {
       case 'light':
         return ThemeMode.light;
-      case 'dark':
-        return ThemeMode.dark;
-      default:
+      case 'system':
         return ThemeMode.system;
+      case 'dark':
+      default:
+        return ThemeMode.dark;
     }
   }
 
@@ -44,4 +48,9 @@ class SettingsRepository {
 
   bool get guideDismissed => _prefs.getBool(_kGuideDismissed) ?? false;
   Future<void> setGuideDismissed(bool v) => _prefs.setBool(_kGuideDismissed, v);
+
+  /// "Not now" on the History quick-save card (remembered).
+  bool get quickSavePromptDismissed => _prefs.getBool(_kQuickSavePromptDismissed) ?? false;
+  Future<void> setQuickSavePromptDismissed(bool v) =>
+      _prefs.setBool(_kQuickSavePromptDismissed, v);
 }

@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="launch_background">#121318</color>
+    <!-- Same pink as light mode: no black window at start-up. -->
+    <color name="launch_background">#FD79A8</color>
 </resources>

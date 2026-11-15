@@ -39,8 +39,10 @@ class AppDatabase {
         await batch.commit(noResult: true);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
-        // Add migrations here when DbSchema.version increases, e.g.
-        // if (oldVersion < 2) { await db.execute('ALTER TABLE ...'); }
+        // Additive migrations only; existing data is never touched.
+        if (oldVersion < 2) {
+          await db.execute(DbSchema.createdIndex);
+        }
       },
     );
   }

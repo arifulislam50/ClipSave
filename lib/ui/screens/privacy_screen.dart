@@ -1,30 +1,48 @@
 import 'package:flutter/material.dart';
 
-/// In-app copy of the privacy policy (keep in sync with PRIVACY_POLICY.md).
+
+/// In-app summary of the privacy policy (keep in sync with PRIVACY_POLICY.md).
 class PrivacyScreen extends StatelessWidget {
   const PrivacyScreen({super.key});
+
+  static const String adsPolicyUrl = 'https://policies.google.com/technologies/ads';
 
   static const List<(String, String)> _sections = [
     (
       'Summary',
-      'ClipSave stores the text you choose to save only on your device. It has '
-          'no accounts, no ads, no analytics and no internet permission, so your '
-          'clips cannot be sent anywhere by the app.'
+      'Your clips are stored only on this device and are never uploaded by Copy Box. '
+          'Copy Box has no accounts and no servers of its own. The app shows ads '
+          'provided by Google AdMob, and you can manage your ad consent in Settings.'
     ),
     (
-      'What is stored',
-      'Clip text, its detected type (link, email, phone, number, text), the '
-          'folder you chose, whether it is a favourite, how it was saved, and when. '
-          'Your settings are stored separately. Everything lives in the app\'s '
-          'private storage.'
+      'What is stored on your device',
+      'Clip text, its detected type (link, email, phone, number, text), the folder '
+          'you chose, whether it is a favourite, how it was saved, and when. Your '
+          'settings are stored separately. Everything lives in the app\'s private '
+          'storage, and cloud backup and device transfer are disabled for it.'
+    ),
+    (
+      'Ads by Google AdMob',
+      'Copy Box shows a banner ad on the History and Folders screens. Google AdMob '
+          'may collect device identifiers (such as the advertising ID) and usage '
+          'data under Google\'s policy: $adsPolicyUrl. Copy Box never passes your '
+          'clips or clipboard content to the ad SDK, and ad requests contain no '
+          'content from the app.'
+    ),
+    (
+      'Your ad choices',
+      'Where consent is required, Google\'s consent form appears before any ad is '
+          'requested. You can review or change your choice in Settings > Privacy and '
+          'ad choices, and reset your advertising ID in Android settings.'
     ),
     (
       'When the clipboard is read',
-      'Only while ClipSave is open and focused (if auto-save is on), when you tap '
-          '"Save clipboard", or when you tap the Quick Settings tile. Share and '
+      'Only when Copy Box opens or returns to the screen (if auto-save is on), '
+          'when you tap the Quick Settings tile, or when you tap Save copied text on '
+          'the optional quick-save notification. Share and '
           'text-selection saves receive only the text you sent. Text from the tile, '
-          'Share or text selection waits in a small private queue until ClipSave '
-          'next opens and checks it.'
+          'Share or text selection waits in a small private queue until Copy Box '
+          'next opens and checks it. The splash screen never reads the clipboard.'
     ),
     (
       'Sensitive data',
@@ -35,14 +53,26 @@ class PrivacyScreen extends StatelessWidget {
           'written to storage unless you tap "Save anyway".'
     ),
     (
-      'Backups and sharing',
-      'Android cloud backup and device-to-device transfer are disabled for '
-          'ClipSave. No data is shared with third parties.'
+      'Notifications and permissions',
+      'Copy Box asks for the notification permission only if you turn on the '
+          'quick-save notification (Android 13+). The notification never shows clip '
+          'text; its Save button reads the clipboard only when tapped. Starting at '
+          'boot is used only to show the notification again after a restart. Android '
+          '12+ shows its own "pasted from your clipboard" notice whenever the '
+          'clipboard is read; apps cannot turn it off. No other runtime permissions '
+          'are requested.'
+    ),
+    (
+      'Copying',
+      'When you tap the copy button on a clip, Copy Box copies it to the system '
+          'clipboard, where other apps can read it under Android\'s normal rules. '
+          'Clips that look sensitive are marked so Android 13+ hides them in the '
+          'copy preview. Tapping the clip itself only expands or collapses it.'
     ),
     (
       'Deleting your data',
       'Delete single clips, clear history in Settings, or uninstall the app to '
-          'remove everything.'
+          'remove everything Copy Box stored on the device.'
     ),
   ];
 
@@ -50,15 +80,18 @@ class PrivacyScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Privacy policy')),
+      appBar: AppBar(
+        title: const Text('Privacy policy', style: TextStyle(fontWeight: FontWeight.w600)),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
           for (final (title, body) in _sections) ...[
             const SizedBox(height: 16),
-            Text(title, style: theme.textTheme.titleMedium),
+            Text(title, style: theme.textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
             const SizedBox(height: 4),
-            Text(body, style: theme.textTheme.bodyMedium),
+            SelectableText(body,
+                style: theme.textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
           ],
         ],
       ),

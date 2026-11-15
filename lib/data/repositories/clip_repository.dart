@@ -20,6 +20,11 @@ class ClipRepository {
 
   Future<Database> get _db => _appDb.database;
 
+  /// Opens (and if needed creates or migrates) the database.
+  Future<void> open() async {
+    await _db;
+  }
+
   // ---------------------------------------------------------------- clips --
 
   /// Saves [content]. An exact duplicate is moved to the top instead of
@@ -65,7 +70,8 @@ class ClipRepository {
   Future<List<ClipItem>> query({
     String search = '',
     ClipFilter filter = ClipFilter.all,
-    int limit = 2000,
+    int limit = 50,
+    int offset = 0,
   }) async {
     final db = await _db;
     final where = <String>[];
@@ -96,6 +102,7 @@ class ClipRepository {
       whereArgs: args.isEmpty ? null : args,
       orderBy: 'updated_at DESC, id DESC',
       limit: limit,
+      offset: offset,
     );
     return rows.map(ClipItem.fromMap).toList(growable: false);
   }
@@ -174,6 +181,16 @@ class ClipRepository {
     if (limit <= 0) return;
     final db = await _db;
     await db.rawDelete(DbSchema.prune, [limit]);
+  }
+
+  /// Clip count per automatic category (categories with no clips are absent).
+  Future<Map<ClipCategory, int>> categoryCounts() async {
+    final db = await _db;
+    final rows = await db.rawQuery(DbSchema.categoryCounts);
+    return {
+      for (final row in rows)
+        ClipCategory.fromKey(row['category'] as String?): row['clip_count'] as int,
+    };
   }
 
   Future<int> count() async {

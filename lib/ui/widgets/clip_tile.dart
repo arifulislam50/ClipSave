@@ -2,95 +2,196 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/constants.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/utils/time_format.dart';
 import '../../data/models/clip_item.dart';
 import '../../state/clips_controller.dart';
 import '../actions/clip_actions.dart';
 import 'category_visuals.dart';
 
-/// One history row. Tap = copy, star = favourite, long-press = more actions.
+/// One history row.
+///
+/// - No left avatar; text starts at 16px. The type word in the meta line uses
+///   the category colour.
+/// - One tap toggles collapsed (2 lines) / expanded (full text, selectable,
+///   capped at [maxExpandedChars]) with a ~200 ms AnimatedSize. The state lives
+///   in [expanded], owned by the list per clip id, so only this tile rebuilds.
+/// - The last line shows when the clip was last saved ([ClipItem.updatedAt],
+///   the timestamp the list is sorted by), in local time: "Today · 12:48 PM".
+/// - Tapping does NOT copy. Copy only via the copy button (or the long-press
+///   menu), which still marks sensitive-looking clips EXTRA_IS_SENSITIVE.
 class ClipTile extends StatelessWidget {
-  const ClipTile({super.key, required this.item});
+  const ClipTile({super.key, required this.item, required this.expanded});
 
   final ClipItem item;
+  final ValueNotifier<bool> expanded;
+
+  static const int maxExpandedChars = 10000;
+  static const String truncatedNote =
+      'Showing the first 10,000 characters. Open Edit to see the rest.';
+  static const String collapseHint = 'Tap to collapse';
 
   @override
   Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: expanded,
+      builder: (context, isExpanded, _) => _buildTile(context, isExpanded),
+    );
+  }
+
+  void _toggle() => expanded.value = !expanded.value;
+
+  Widget _buildTile(BuildContext context, bool isExpanded) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final controller = context.read<ClipsController>();
-    final folder = controller.folderById(item.folderId);
+    final colors = CopyBoxColors.of(context);
+    final folder = context.read<ClipsController>().folderById(item.folderId);
+    final muted12 = TextStyle(fontSize: 12, color: scheme.onSurfaceVariant);
+    final metaStyle = theme.textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant);
+    final bodyStyle = theme.textTheme.bodyLarge?.copyWith(color: scheme.onSurface);
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    final truncated = item.content.length > maxExpandedChars;
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      elevation: 0,
-      color: scheme.surfaceContainerLow,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => ClipActions.copy(context, item),
-        onLongPress: () => showClipActionsSheet(context, item),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
-          child: Row(
+    final textBlock = isExpanded
+        ? Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Icon(item.category.icon, size: 20, color: scheme.primary),
+              SelectableText(
+                truncated ? item.content.substring(0, maxExpandedChars) : item.content,
+                style: bodyStyle,
+                onTap: _toggle,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
+              if (truncated) ...[
+                const SizedBox(height: 6),
+                Text(truncatedNote, style: muted12),
+              ],
+            ],
+          )
+        : Text(item.preview, maxLines: 2, overflow: TextOverflow.ellipsis, style: bodyStyle);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Semantics(
+        container: true,
+        button: true,
+        label: 'Saved ${TimeFormat.semantic(item.updatedAt)}',
+        value: isExpanded ? 'Expanded' : 'Collapsed',
+        onTap: _toggle,
+        onTapHint: isExpanded ? 'Collapse' : 'Expand',
+        onLongPress: () => showClipActionsSheet(context, item),
+        onLongPressHint: 'More actions',
+        child: Material(
+          color: colors.card,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: scheme.outlineVariant),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            excludeFromSemantics: true,
+            onTap: _toggle,
+            onLongPress: () => showClipActionsSheet(context, item),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 72),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      item.preview,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyLarge,
-                    ),
-                    const SizedBox(height: 6),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 4,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text(
-                          TimeFormat.relative(item.updatedAt),
-                          style: theme.textTheme.labelSmall
-                              ?.copyWith(color: scheme.onSurfaceVariant),
-                        ),
-                        Text(
-                          ClipSources.label(item.source),
-                          style: theme.textTheme.labelSmall
-                              ?.copyWith(color: scheme.onSurfaceVariant),
-                        ),
-                        if (folder != null)
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.folder, size: 14, color: Color(folder.color)),
-                              const SizedBox(width: 2),
-                              Text(folder.name, style: theme.textTheme.labelSmall),
+                    Expanded(
+                      child: AnimatedSize(
+                        duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 200),
+                        curve: Curves.easeInOut,
+                        alignment: Alignment.topLeft,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            textBlock,
+                            const SizedBox(height: 6),
+                            Text.rich(
+                              TextSpan(children: [
+                                TextSpan(
+                                  text: item.category.singular,
+                                  style: TextStyle(
+                                    color: item.category.color(theme.brightness),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                TextSpan(text: ' · ${ClipSources.label(item.source)}'),
+                              ]),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: metaStyle,
+                            ),
+                            if (folder != null) ...[
+                              const SizedBox(height: 2),
+                              Row(
+                                children: [
+                                  Icon(Icons.folder_rounded, size: 14, color: Color(folder.color)),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: Text(folder.name,
+                                        maxLines: 1, overflow: TextOverflow.ellipsis, style: metaStyle),
+                                  ),
+                                ],
+                              ),
                             ],
-                          ),
-                      ],
+                            // Last line of the box (above the expanded-only hint):
+                            // when the clip was saved, in local time.
+                            const SizedBox(height: 4),
+                            Text(
+                              TimeFormat.formatDateTime(item.updatedAt),
+                              key: const ValueKey<String>('clip-date'),
+                              style: muted12,
+                            ),
+                            if (isExpanded) ...[
+                              const SizedBox(height: 6),
+                              Text(collapseHint, style: muted12),
+                            ],
+                          ],
+                        ),
+                      ),
                     ),
+                    const SizedBox(width: 4),
+                    if (item.isFavorite)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12, right: 2),
+                        child: Icon(Icons.star_rounded,
+                            size: 20, color: colors.star, semanticLabel: 'Favourite'),
+                      ),
+                    CopyButton(onPressed: () => ClipActions.copy(context, item)),
                   ],
                 ),
               ),
-              IconButton(
-                tooltip: item.isFavorite ? 'Remove from favourites' : 'Add to favourites',
-                icon: Icon(
-                  item.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
-                  color: item.isFavorite ? Colors.amber.shade600 : scheme.onSurfaceVariant,
-                ),
-                onPressed: () => controller.toggleFavorite(item),
-              ),
-            ],
+            ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// 44px round copy button shown at the end of every clip tile.
+class CopyButton extends StatelessWidget {
+  const CopyButton({super.key, required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = CopyBoxColors.of(context);
+    return IconButton(
+      tooltip: 'Copy',
+      onPressed: onPressed,
+      style: IconButton.styleFrom(
+        backgroundColor: colors.fill,
+        fixedSize: const Size(44, 44),
+        minimumSize: const Size(44, 44),
+        shape: const CircleBorder(),
+      ),
+      icon: Icon(Icons.copy_rounded, size: 20, color: colors.link),
     );
   }
 }
@@ -107,6 +208,7 @@ Future<void> showClipActionsSheet(BuildContext context, ClipItem item) {
         action();
       }
 
+      final error = Theme.of(sheetContext).colorScheme.error;
       return SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -114,7 +216,7 @@ Future<void> showClipActionsSheet(BuildContext context, ClipItem item) {
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
               child: Text(
-                'Saved ${TimeFormat.full(item.createdAt)}',
+                'First saved ${TimeFormat.absolute(item.createdAt)}',
                 style: Theme.of(sheetContext).textTheme.labelMedium,
               ),
             ),
@@ -139,9 +241,8 @@ Future<void> showClipActionsSheet(BuildContext context, ClipItem item) {
               onTap: () => run(() => ClipActions.moveToFolder(context, item)),
             ),
             ListTile(
-              leading: Icon(Icons.delete_outline, color: Theme.of(sheetContext).colorScheme.error),
-              title: Text('Delete',
-                  style: TextStyle(color: Theme.of(sheetContext).colorScheme.error)),
+              leading: Icon(Icons.delete_outline, color: error),
+              title: Text('Delete', style: TextStyle(color: error)),
               onTap: () => run(() => ClipActions.delete(context, item)),
             ),
           ],

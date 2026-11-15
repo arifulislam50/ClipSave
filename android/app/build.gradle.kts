@@ -10,6 +10,12 @@ plugins {
 
 // Release signing is read from android/key.properties (never commit that file).
 val keystoreProperties = Properties()
+// `flutter build apk --target-platform android-arm64` passes -Ptarget-platform.
+// When it is exactly arm64, the APK also filters native libs to arm64-v8a.
+// App bundles (no target-platform) keep every ABI so Play can serve all devices.
+val flutterTargetPlatform = project.findProperty("target-platform") as String?
+val arm64OnlyBuild = flutterTargetPlatform == "android-arm64"
+
 val keystorePropertiesFile = rootProject.file("key.properties")
 val hasReleaseKeystore = keystorePropertiesFile.exists()
 if (hasReleaseKeystore) {
@@ -35,6 +41,31 @@ android {
         targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        if (arm64OnlyBuild) {
+            ndk { abiFilters += "arm64-v8a" }
+        }
+    }
+
+    // English-only resources: drops the translations bundled by AndroidX and
+    // Play services (the app UI is English; the UMP consent form is web-based).
+    androidResources {
+        localeFilters += "en"
+    }
+
+    packaging {
+        // Store .so files uncompressed and page-aligned (smaller download,
+        // no extraction on install).
+        jniLibs { useLegacyPackaging = false }
+        resources {
+            excludes += setOf(
+                "META-INF/*.version",
+                "META-INF/*.kotlin_module",
+                "META-INF/AL2.0",
+                "META-INF/LGPL2.1",
+                "DebugProbesKt.bin",
+                "kotlin-tooling-metadata.json",
+            )
+        }
     }
 
     signingConfigs {
@@ -50,8 +81,9 @@ android {
 
     buildTypes {
         release {
-            // Falls back to the debug key so `flutter build apk` works before you
-            // create an upload key. Play Store uploads MUST use the release key.
+            // TODO(release): create an upload keystore + android/key.properties
+            // (see BUILD.md). Without it, release builds are signed with the
+            // DEBUG key: fine for testing an APK, rejected by the Play Store.
             signingConfig = if (hasReleaseKeystore) {
                 signingConfigs.getByName("release")
             } else {

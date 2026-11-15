@@ -7,7 +7,9 @@ import android.os.Looper
 import android.widget.Toast
 
 /**
- * Launched only by [ClipTileService] after the user taps the tile.
+ * Launched only by [ClipTileService] (tile tap) and by the quick-save
+ * notification's "Save copied text" action ([QuickSaveNotification]), always
+ * DIRECTLY by an activity PendingIntent (never via a receiver or service).
  *
  * Android 10+ lets an app read the clipboard only while one of its windows
  * has input focus. This transparent, focusable activity waits for
@@ -24,6 +26,11 @@ class ClipboardCaptureActivity : Activity() {
 
     private val handler = Handler(Looper.getMainLooper())
     private var handled = false
+
+    /** "tile" (default) or "notification"; stored with the clip as its source. */
+    private val source: String by lazy {
+        if (intent?.getStringExtra(EXTRA_SOURCE) == SOURCE_NOTIFICATION) SOURCE_NOTIFICATION else SOURCE_TILE
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,7 +52,7 @@ class ClipboardCaptureActivity : Activity() {
     }
 
     private fun attemptCapture(retriesLeft: Int) {
-        val clip = ClipReader.read(this, "tile")
+        val clip = ClipReader.read(this, source)
         if (clip == null && retriesLeft > 0 && hasWindowFocus()) {
             handler.postDelayed({ attemptCapture(retriesLeft - 1) }, RETRY_DELAY_MS)
             return
@@ -72,6 +79,9 @@ class ClipboardCaptureActivity : Activity() {
     }
 
     companion object {
+        const val EXTRA_SOURCE = "com.clipsave.app.extra.SOURCE"
+        const val SOURCE_TILE = "tile"
+        const val SOURCE_NOTIFICATION = "notification"
         private const val FOCUS_TIMEOUT_MS = 2500L
         private const val RETRY_DELAY_MS = 200L
     }

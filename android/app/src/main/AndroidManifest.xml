@@ -1,10 +1,21 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!--
-        ClipSave requests NO runtime permissions and NO internet access in release builds.
-        Clipboard reads happen only while one of ClipSave's own activities has focus,
+        INTERNET and ACCESS_NETWORK_STATE are used only by Google AdMob (banner ads and
+        the consent form). Copy Box never uploads clips.
+        POST_NOTIFICATIONS: Copy Box asks for it only if the user turns on the
+        quick-save notification (Android 13+). The notification never shows clip text;
+        its Save button reads the clipboard only when tapped.
+        RECEIVE_BOOT_COMPLETED: used only to show that notification again after a restart.
+        Clipboard reads happen only while one of Copy Box's own activities has focus,
         as Android 10+ requires.
     -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Quick-save notification (Android 13+): requested ONLY when the user turns it on. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Only to show the quick-save notification again after a restart, if it is on. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:name="${applicationName}"
@@ -77,9 +88,28 @@
                 android:value="false" />
         </service>
 
+        <!-- Re-posts the quick-save notification after boot / app update (if on).
+             exported="false": these protected broadcasts are sent by the system,
+             which may deliver to non-exported receivers; no other app can trigger it. -->
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- AdMob App ID. Google's TEST ID for now.
+             TODO(release): replace with your real App ID (keep in sync with
+             lib/core/ad_config.dart AdConfig.androidAppId). -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-3940256099942544~3347511713" />
     </application>
 
     <!-- Required by Flutter's text fields to show other apps' PROCESS_TEXT actions. -->

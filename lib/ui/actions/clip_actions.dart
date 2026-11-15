@@ -19,27 +19,6 @@ class ClipActions {
       ..showSnackBar(SnackBar(content: Text(text), action: action));
   }
 
-  /// "Save clipboard" button: reads now, asks before saving anything sensitive.
-  static Future<void> saveClipboard(BuildContext context) async {
-    final controller = context.read<ClipsController>();
-    final messenger = ScaffoldMessenger.of(context);
-    var outcome = await controller.captureClipboard();
-    if (!context.mounted) return;
-    if (outcome.kind == CaptureKind.sensitive) {
-      final ok = await showConfirmDialog(
-        context,
-        title: 'Save sensitive text?',
-        message: '${outcome.reason!.explanation} '
-            'It will be stored unencrypted in ClipSave on this device. '
-            'Save it anyway?',
-        confirmLabel: 'Save anyway',
-      );
-      if (!ok || !context.mounted) return;
-      outcome = await controller.captureClipboard(force: true);
-    }
-    _snack(messenger, outcome.message);
-  }
-
   static Future<void> copy(BuildContext context, ClipItem item) async {
     final messenger = ScaffoldMessenger.of(context);
     final showOwn = await context.read<ClipsController>().copy(item);

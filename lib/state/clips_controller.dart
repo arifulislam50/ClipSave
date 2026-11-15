@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 
 import '../core/constants.dart';
 import '../core/theme/app_theme.dart';
+import '../core/utils/content_classifier.dart';
 import '../core/utils/sensitive_detector.dart';
 import '../data/models/clip_filter.dart';
 import '../data/models/clip_item.dart';
@@ -15,7 +16,9 @@ import 'settings_controller.dart';
 
 enum CaptureKind { saved, alreadySaved, empty, tooLong, sensitive }
 
-/// Outcome of the manual "Save clipboard" action.
+/// Outcome of [ClipsController.captureClipboard] (an explicit, confirmed
+/// clipboard read). No button calls it since the History FAB became
+/// "New clip"; kept, with its tests, for a possible future entry point.
 class CaptureOutcome {
   const CaptureOutcome(this.kind, {this.reason});
   final CaptureKind kind;
@@ -68,10 +71,17 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
 
   List<ClipItem> _items = const [];
   List<Folder> _folders = const [];
+  Map<ClipCategory, int> _categoryCounts = const {};
   String _query = '';
   ClipFilter _filter = ClipFilter.all;
   bool _loading = true;
   int _sdkInt = 0;
+
+  /// History is paged: the newest [pageSize] clips first, more on scroll.
+  static const int pageSize = 50;
+  int _wanted = pageSize;
+  bool _hasMore = false;
+  bool _loadingMore = false;
   int _lastLimit = -1;
 
   StreamSubscription<CapturedClip>? _autoSub;
@@ -85,10 +95,14 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
 
   List<ClipItem> get items => _items;
   List<Folder> get folders => _folders;
+  int categoryCount(ClipCategory category) => _categoryCounts[category] ?? 0;
   String get query => _query;
   ClipFilter get filter => _filter;
   bool get loading => _loading;
   int get sdkInt => _sdkInt;
+
+  /// True when older clips exist beyond [items] (for the current filter).
+  bool get hasMore => _hasMore;
   int get heldSensitiveCount => _heldSensitive.length;
 
   Folder? folderById(int? id) {
@@ -101,10 +115,15 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
 
   // ------------------------------------------------------------ lifecycle --
 
+  /// Opens the database (no reads of clips, no clipboard access). Called by
+  /// the splash so the first history query is fast.
+  Future<void> warmUp() => _repo.open();
+
   Future<void> init() async {
     if (_initialized) return;
     _initialized = true;
     WidgetsBinding.instance.addObserver(this);
+    await _settings.load(); // usually already loaded by the splash
     _lastLimit = _settings.historyLimit;
     _settings.addListener(_onSettingsChanged);
     _sdkInt = await _bridge.sdkInt();
@@ -115,7 +134,7 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
     } catch (_) {
       _loading = false;
       _notify();
-      _say(const AppMessage('Could not open clip history. Restart ClipSave to retry.'));
+      _say(const AppMessage('Could not open clip history. Restart Copy Box to retry.'));
       return; // Don't auto-capture into a database that failed to open.
     }
     _syncAutoCapture();
@@ -138,7 +157,7 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   /// Listening to the event channel is what enables native reads, so turning
-  /// auto-capture off really stops ClipSave from touching the clipboard.
+  /// auto-capture off really stops Copy Box from touching the clipboard.
   void _syncAutoCapture() {
     final wanted = _settings.autoCapture;
     if (wanted && _autoSub == null) {
@@ -180,9 +199,13 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
         !folders.any((f) => f.id == _filter.folderId)) {
       _filter = ClipFilter.all;
     }
-    final items = await _repo.query(search: _query, filter: _filter);
+    // One extra row tells whether there is another page.
+    final rows = await _repo.query(search: _query, filter: _filter, limit: _wanted + 1);
+    final counts = await _repo.categoryCounts(); // counted in SQL, not in Dart
     _folders = folders;
-    _items = items;
+    _categoryCounts = counts;
+    _hasMore = rows.length > _wanted;
+    _items = _hasMore ? rows.sublist(0, _wanted) : rows;
     _loading = false;
     _notify();
   }
@@ -201,11 +224,9 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
     final text = clip.text;
     if (text.trim().isEmpty || text == _lastSelfCopy) return;
     if (text.length > AppInfo.maxClipLength) return;
-    final reason = _autoFilterReason(clip);
-    if (reason != null) {
-      // Still on the clipboard; the user can save it deliberately.
-      _say(AppMessage('Not saved automatically. ${reason.explanation} '
-          'Tap "Save clipboard" to keep it.'));
+    if (_autoFilterReason(clip) != null) {
+      // Held in memory only, with a "Save anyway" snackbar action.
+      _holdSensitive([clip]);
       return;
     }
     final result = await _store(text, source: ClipSources.auto);
@@ -214,8 +235,9 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  /// Manual "Save clipboard". With [force] the sensitivity check is skipped
-  /// after the user confirmed.
+  /// Explicit clipboard read. With [force] the sensitivity check is skipped
+  /// after the user confirmed. No UI calls this today: the clipboard is read
+  /// only when the app opens (auto-save) or from the Quick Settings tile.
   Future<CaptureOutcome> captureClipboard({bool force = false}) async {
     final clip = await _bridge.readClipboard();
     if (clip == null || clip.text.trim().isEmpty) {
@@ -276,8 +298,8 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  /// Keeps skipped inbox items in memory (never on disk) briefly, so the user
-  /// can deliberately save them from the snackbar.
+  /// Keeps skipped items (auto-save or inbox) in memory, never on disk,
+  /// briefly, so the user can deliberately save them from the snackbar.
   void _holdSensitive(List<CapturedClip> clips) {
     _heldSensitive
       ..clear()
@@ -332,13 +354,22 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
   // ---------------------------------------------------------- clip edits --
 
   /// Adds typed text. Returns null if empty or too long.
-  Future<SaveResult?> addClip(String text, {int? folderId}) async {
+  Future<SaveResult?> addClip(String text,
+      {int? folderId, bool favorite = false}) async {
     if (text.length > AppInfo.maxClipLength) return null;
-    return _store(text, source: ClipSources.manual, folderId: folderId);
+    final result =
+        await _store(text, source: ClipSources.manual, folderId: folderId);
+    final id = result?.item.id;
+    if (favorite && id != null && !result!.item.isFavorite) {
+      await _repo.setFavorite(id, true);
+      await refresh();
+    }
+    return result;
   }
 
   /// Returns false if another clip already has exactly this text.
-  Future<bool> updateClip(ClipItem item, String text, {int? folderId}) async {
+  Future<bool> updateClip(ClipItem item, String text,
+      {int? folderId, bool? favorite}) async {
     if (item.id == null ||
         text.trim().isEmpty ||
         text.length > AppInfo.maxClipLength) {
@@ -348,6 +379,9 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
       await _repo.updateContent(item.id!, text, folderId: _validFolder(folderId));
     } on DuplicateClipException {
       return false;
+    }
+    if (favorite != null && favorite != item.isFavorite) {
+      await _repo.setFavorite(item.id!, favorite);
     }
     await refresh();
     return true;
@@ -397,7 +431,20 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
 
   // ------------------------------------------------------ search & filter --
 
+  /// Loads the next page of older clips (called when the list nears its end).
+  Future<void> loadMore() async {
+    if (!_hasMore || _loadingMore) return;
+    _loadingMore = true;
+    try {
+      _wanted = _items.length + pageSize;
+      await refresh();
+    } finally {
+      _loadingMore = false;
+    }
+  }
+
   void setQuery(String value) {
+    _wanted = pageSize;
     _query = value;
     _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 200), refresh);
@@ -405,6 +452,7 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
 
   void setFilter(ClipFilter value) {
     if (value == _filter) return;
+    _wanted = pageSize;
     _filter = value;
     unawaited(refresh());
   }

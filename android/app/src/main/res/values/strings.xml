@@ -1,15 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">ClipSave</string>
-    <string name="share_target_label">Save to ClipSave</string>
-    <string name="process_text_label">Save to ClipSave</string>
-    <string name="tile_label">Save clipboard</string>
-    <string name="tile_subtitle">ClipSave</string>
+    <string name="app_name">Copy Box</string>
+    <string name="share_target_label">Save to Copy Box</string>
+    <string name="process_text_label">Save to Copy Box</string>
+    <string name="tile_label">Save to Copy Box</string>
+    <string name="tile_subtitle">Copy Box</string>
 
-    <string name="capture_sent">Sent to ClipSave</string>
-    <string name="capture_too_long">Text is too long for ClipSave</string>
+    <string name="capture_sent">Sent to Copy Box</string>
+    <string name="capture_too_long">Text is too long for Copy Box</string>
     <string name="capture_empty">Clipboard is empty or not text</string>
     <string name="capture_sensitive_skipped">Not saved: the copying app marked this as sensitive</string>
-    <string name="capture_no_focus">Could not read the clipboard. Open ClipSave and tap Save clipboard.</string>
+    <string name="capture_no_focus">Could not read the clipboard. Tap the tile again, or open Copy Box to save it automatically.</string>
     <string name="capture_unsupported">Only text can be saved</string>
+
+    <!-- Quick-save notification. Fixed text only: it never contains clip content. -->
+    <string name="quick_save_channel_name">Quick save</string>
+    <string name="quick_save_channel_description">A silent notification with a Save button for text you just copied.</string>
+    <string name="quick_save_title">Save what you just copied</string>
+    <string name="quick_save_text">Tap Save after you copy something. It is kept in your history, even if you do not open Copy Box.</string>
+    <string name="quick_save_action_save">Save copied text</string>
+    <string name="quick_save_action_open">Open Copy Box</string>
 </resources>

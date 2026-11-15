@@ -36,7 +36,7 @@ object ClipReader {
 
     private const val PREFS = "clipsave_native"
     private const val KEY_LAST_TIMESTAMP = "last_clip_timestamp"
-    private const val CLIP_LABEL = "ClipSave"
+    private const val CLIP_LABEL = "Copy Box"
 
     private fun manager(context: Context): ClipboardManager? =
         context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
@@ -91,7 +91,7 @@ object ClipReader {
     /**
      * Copies [text] to the clipboard. When [sensitive] is true the clip is
      * flagged so Android 13+ hides its content in the copy preview, and other
-     * clipboard tools (including ClipSave itself) treat it as sensitive.
+     * clipboard tools (including Copy Box itself) treat it as sensitive.
      */
     fun write(context: Context, text: String, sensitive: Boolean) {
         val cm = manager(context) ?: return

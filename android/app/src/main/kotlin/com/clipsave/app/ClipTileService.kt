@@ -9,7 +9,7 @@ import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 
 /**
- * Quick Settings tile: "Save clipboard". One tap from any app opens the
+ * Quick Settings tile: "Save to Copy Box". One tap from any app opens the
  * invisible [ClipboardCaptureActivity], which reads the clipboard while focused.
  */
 class ClipTileService : TileService() {

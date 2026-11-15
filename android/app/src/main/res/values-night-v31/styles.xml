@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+ (API 31), dark mode.
+     Start-up is one continuous pink (#FD79A8) screen on every Android version:
+     LaunchTheme (until Flutter draws) -> NormalTheme (while Flutter initialises)
+     -> the in-app pink splash. No black or white flash, no second logo.
+     When the app UI appears, Flutter calls MainActivity "setWindowBackground" so
+     the window behind Flutter follows the app theme (black in dark mode). -->
+<resources>
+    <!-- Shown while the Flutter engine starts. -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@drawable/launch_background</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@color/launch_background</item>
+        <item name="android:navigationBarColor">@color/launch_background</item>
+        <!-- Android 12+ system splash: same pink, fully transparent icon, no animation,
+             so it is indistinguishable from the pink screen that follows. -->
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash_empty</item>
+        <item name="android:windowSplashScreenAnimationDuration">0</item>
+    </style>
+    <!-- Behind the Flutter UI; visible while Flutter initialises, so pink too. -->
+    <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@color/launch_background</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@color/launch_background</item>
+        <item name="android:navigationBarColor">@color/launch_background</item>
+    </style>
+    <!-- Invisible capture activities. -->
+    <style name="CaptureTheme" parent="@android:style/Theme.Translucent.NoTitleBar">
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
+</resources>

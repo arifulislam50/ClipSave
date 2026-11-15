@@ -1,13 +1,14 @@
 name: clipsave
-description: ClipSave - a privacy-first clipboard manager for Android.
+description: Copy Box - a clipboard manager for Android that keeps your clips on your device.
 publish_to: 'none'
 
 # versionName+versionCode. Bump the number after "+" for every Play Store upload.
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.6.0
-  flutter: ">=3.27.0"
+  # google_mobile_ads 9.x requires Dart 3.10 / Flutter 3.38.1 or newer.
+  sdk: ^3.10.0
+  flutter: ">=3.38.1"
 
 dependencies:
   flutter:
@@ -16,6 +17,7 @@ dependencies:
   path: ^1.9.0
   provider: ^6.1.2
   shared_preferences: ^2.3.3
+  google_mobile_ads: ^9.2.0
 
 dev_dependencies:
   flutter_test:

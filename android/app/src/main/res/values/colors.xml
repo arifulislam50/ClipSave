@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#3D5AFE</color>
-    <color name="launch_background">#FBF8FF</color>
+    <color name="ic_launcher_background">#FD79A8</color>
+    <!-- Start-up window colour (pink in light AND dark mode, see values-night). -->
+    <color name="launch_background">#FD79A8</color>
+    <color name="splash_background">#FD79A8</color>
 </resources>
