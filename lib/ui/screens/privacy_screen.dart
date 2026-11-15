@@ -37,8 +37,9 @@ class PrivacyScreen extends StatelessWidget {
     ),
     (
       'When the clipboard is read',
-      'Only when Copy Box opens or returns to the screen (if auto-save is on), or '
-          'when you tap the Quick Settings tile. Share and '
+      'Only when Copy Box opens or returns to the screen (if auto-save is on), '
+          'when you tap the Quick Settings tile, or when you tap Save copied text on '
+          'the optional quick-save notification. Share and '
           'text-selection saves receive only the text you sent. Text from the tile, '
           'Share or text selection waits in a small private queue until Copy Box '
           'next opens and checks it. The splash screen never reads the clipboard.'
@@ -50,6 +51,16 @@ class PrivacyScreen extends StatelessWidget {
           'also skip text that looks like a password, one-time code, card number or '
           'key. Skipped items are held in memory for two minutes only and are never '
           'written to storage unless you tap "Save anyway".'
+    ),
+    (
+      'Notifications and permissions',
+      'Copy Box asks for the notification permission only if you turn on the '
+          'quick-save notification (Android 13+). The notification never shows clip '
+          'text; its Save button reads the clipboard only when tapped. Starting at '
+          'boot is used only to show the notification again after a restart. Android '
+          '12+ shows its own "pasted from your clipboard" notice whenever the '
+          'clipboard is read; apps cannot turn it off. No other runtime permissions '
+          'are requested.'
     ),
     (
       'Copying',

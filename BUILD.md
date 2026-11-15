@@ -73,7 +73,7 @@ Install: `adb install -r build/app/outputs/flutter-apk/app-release.apk`
    - **Data safety:** see section 7 below. Copy Box itself uploads nothing, but the AdMob SDK collects data, so the form is **not** "no data collected".
    - **App content → Ads:** answer **Yes, my app contains ads**.
    - **App content → Advertising ID:** declare that the app uses the advertising ID, for **Advertising or marketing**. The Google Mobile Ads SDK adds `com.google.android.gms.permission.AD_ID`.
-   - **App content → Permissions:** INTERNET and ACCESS_NETWORK_STATE (normal permissions, used by AdMob) and AD_ID. No runtime permissions. The Quick Settings tile uses a system binding permission.
+   - **App content → Permissions:** INTERNET and ACCESS_NETWORK_STATE (normal permissions, used by AdMob), AD_ID, POST_NOTIFICATIONS (runtime on Android 13+, requested only when the user turns on the quick-save notification) and RECEIVE_BOOT_COMPLETED (normal; only re-shows that notification after a restart). POST_NOTIFICATIONS and RECEIVE_BOOT_COMPLETED need **no special Play Console declaration** (they are not restricted permissions). The Quick Settings tile uses a system binding permission.
    - **Target API:** 36 (set in `build.gradle.kts`). Raise it when Google raises the requirement.
 5. Suggested short description: "Clipboard history that stays on your device. Save, search, favourite and organise copied text."
    In the full description, state the Android limitation honestly. For example: "Android only lets apps read the clipboard while they're open. Copy Box saves when you open it, or with one tap from the Quick Settings tile, the text-selection menu or Share."
@@ -96,7 +96,8 @@ Expected:
 
 - `android.permission.INTERNET` and `android.permission.ACCESS_NETWORK_STATE`, declared in the main manifest for AdMob.
 - `com.google.android.gms.permission.AD_ID`, merged in by the Google Mobile Ads SDK. Declare it in Play Console (section 4).
-- No runtime (dangerous) permissions.
+- `android.permission.POST_NOTIFICATIONS` (runtime on Android 13+, asked only when the quick-save notification is turned on) and `android.permission.RECEIVE_BOOT_COMPLETED` (normal). No other runtime (dangerous) permissions.
+- `BootReceiver` is `exported="false"` and only re-posts the notification.
 - You **may** see `com.clipsave.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`. AndroidX Core adds this signature-level permission automatically for apps targeting 33+. It grants nothing to other apps and needs no Play declaration.
 - `ClipboardCaptureActivity` has `exported="false"`. `CaptureActivity` is exported only for `SEND` / `PROCESS_TEXT` `text/plain`. `ClipTileService` is protected by `BIND_QUICK_SETTINGS_TILE`.
 
@@ -108,7 +109,8 @@ If anything else appears, find its source in `build/app/outputs/logs/manifest-me
 - [ ] `flutter test` passes, including `clips_controller_test.dart` (sensitivity gate on every capture path)
 - [ ] `python3 -I tool/check_structure.py .` and `python3 -I tool/verify_logic.py .` pass
 - [ ] The README manual test plan passes on real devices or emulators running **Android 10, 12, 13, 14 and 15+**, especially the tile-focus and sensitive-data rows
-- [ ] Step 5 shows only INTERNET, ACCESS_NETWORK_STATE, AD_ID (plus the AndroidX signature permission) and no unexpected components
+- [ ] Step 5 shows only INTERNET, ACCESS_NETWORK_STATE, AD_ID, POST_NOTIFICATIONS, RECEIVE_BOOT_COMPLETED (plus the AndroidX signature permission) and no unexpected components
+- [ ] Quick-save notification on Android 13+: turning it on asks for permission once; denying turns the switch back off with "Open settings"; Save copied text saves (source "Notification"); it reappears after a reboot only if on
 - [ ] **AdMob IDs replaced:** `lib/core/ad_config.dart` and the `APPLICATION_ID` meta-data in `AndroidManifest.xml` contain your real IDs, not Google's test IDs (`ca-app-pub-3940256099942544…`). `tool/check_structure.py` checks that the two match.
 - [ ] The consent form appears for an EEA test user (UMP debug geography) and **Settings → Privacy and ad choices** re-opens it
 - [ ] Banner appears only on History and Folders, above the navigation bar, never covering the "New clip" FAB

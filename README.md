@@ -4,7 +4,7 @@ A clipboard manager for Android, built with Flutter, with native Kotlin capture 
 
 Copy Box keeps a searchable history of the text you copy. You can add favourites, put clips in folders, browse automatic categories (links, emails, phones, numbers, text) and copy any clip back with one tap.
 
-**Privacy in one paragraph:** clips are stored only on the device and are never uploaded by Copy Box. Backup and device transfer are disabled for them. The app shows a banner ad from **Google AdMob** on the History and Folders screens. AdMob may collect device identifiers (such as the advertising ID) and usage data under Google's policy (<https://policies.google.com/technologies/ads>). Consent is collected with Google's User Messaging Platform before any ad loads, and users can change it in **Settings → Privacy and ad choices**. Clip text is never passed to the ad SDK, and `tool/check_structure.py` enforces this.
+**Privacy in one paragraph:** clips are stored only on the device and are never uploaded by Copy Box. Backup and device transfer are disabled for them. The app shows a banner ad from **Google AdMob** on the History and Folders screens. AdMob may collect device identifiers (such as the advertising ID) and usage data under Google's policy (<https://policies.google.com/technologies/ads>). Consent is collected with Google's User Messaging Platform before any ad loads, and users can change it in **Settings → Privacy and ad choices**. Clip text is never passed to the ad SDK, and `tool/check_structure.py` enforces this. Copy Box asks for the notification permission only if you turn on the quick-save notification (Android 13+); the notification never shows clip text; its Save button reads the clipboard only when tapped. BOOT_COMPLETED is used only to show the notification again after a restart.
 
 ---
 
@@ -18,6 +18,7 @@ Copy Box captures text in five compliant ways:
 |---|--------|--------------|------------------|
 | 1 | **Auto-save when you open Copy Box** | When Copy Box gains focus, `MainActivity` checks `primaryClipDescription.timestamp`. Only if the clip changed does it read the text and send it to Flutter. | Yes, only while focused |
 | 2 | **Quick Settings tile "Save to Copy Box"** | The tile opens the invisible `ClipboardCaptureActivity`, which waits for window focus, reads once (retrying once after 200 ms), queues the text and closes. | Yes, during a user tap |
+| 2b | **Quick-save notification** (optional, off by default) | A silent ongoing notification with **Save copied text**. The button is an activity `PendingIntent` straight to `ClipboardCaptureActivity` (no receiver/service trampoline, which Android 12+ blocks), source "notification". `BootReceiver` re-posts it after reboot/update if on. | Yes, during a user tap |
 | 3 | **Text-selection menu "Save to Copy Box"** | `ACTION_PROCESS_TEXT` delivers the selected text to `CaptureActivity`. | No |
 | 4 | **Share sheet "Save to Copy Box"** | `ACTION_SEND text/plain` to `CaptureActivity`. | No |
 | 5 | **New clip** | The "New clip" button opens the editor to type or paste text yourself. | No (any paste is your own keyboard action) |

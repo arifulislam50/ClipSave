@@ -2,9 +2,13 @@
 
     <!--
         INTERNET and ACCESS_NETWORK_STATE are used only by Google AdMob (banner ads and
-        the consent form). Copy Box never uploads clips. No runtime (dangerous)
-        permissions are requested. Clipboard reads happen only while one of Copy Box's
-        own activities has focus, as Android 10+ requires.
+        the consent form). Copy Box never uploads clips.
+        POST_NOTIFICATIONS: Copy Box asks for it only if the user turns on the
+        quick-save notification (Android 13+). The notification never shows clip text;
+        its Save button reads the clipboard only when tapped.
+        RECEIVE_BOOT_COMPLETED: used only to show that notification again after a restart.
+        Clipboard reads happen only while one of Copy Box's own activities has focus,
+        as Android 10+ requires.
     -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />

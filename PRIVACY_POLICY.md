@@ -36,6 +36,7 @@ Android allows apps to read the clipboard only while they are open and focused. 
 
 1. When you open or return to Copy Box, if "Auto-save when Copy Box opens" is on (it is on by default and can be turned off in Settings).
 2. When you tap the Copy Box **Quick Settings tile** ("Save to Copy Box").
+3. When you tap **Save copied text** on the optional quick-save notification.
 
 If you paste text into **New clip** yourself, that is your own keyboard action; Copy Box saves only what you type or paste there.
 
@@ -77,9 +78,15 @@ Copy Box is not directed to children under 13 (or the equivalent minimum age in 
 
 - **Internet access and network state:** used only by Google AdMob to load ads and the consent form.
 - **Advertising ID:** added by the Google Mobile Ads SDK and used for advertising, subject to your consent and Android ad settings.
+- **Notifications (Android 13+):** Copy Box asks for the notification permission only if you turn on the quick-save notification (Android 13+). The notification never shows clip text; its Save button reads the clipboard only when you tap it. If you turn the notification off, Copy Box stops showing it.
+- **Run at startup (RECEIVE_BOOT_COMPLETED):** used only to show the quick-save notification again after a restart or app update, and only if you turned it on. It never reads the clipboard.
 - The Quick Settings tile uses Android's standard tile binding (`BIND_QUICK_SETTINGS_TILE`), which only the system can use.
 
-Copy Box requests no runtime permissions (such as location, contacts or storage).
+Apart from the optional notification permission, Copy Box requests no runtime permissions (such as location, contacts or storage).
+
+## Quick-save notification (optional, off by default)
+
+If you turn it on in Settings, Copy Box shows a silent notification with a **Save copied text** button. Tapping it briefly opens an invisible Copy Box window, which reads the clipboard once and saves the text on your device, with the same sensitive-text rules as the Quick Settings tile. The notification shows only fixed text, never your clips; on the lock screen it shows only the app name. On Android 12 and newer, Android shows its own "Copy Box pasted from your clipboard" notice whenever the clipboard is read; apps cannot turn that notice off.
 
 ## Changes
 
