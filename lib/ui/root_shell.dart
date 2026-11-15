@@ -26,6 +26,10 @@ class _RootShellState extends State<RootShell> {
   @override
   void initState() {
     super.initState();
+    // First touch of the database and clipboard happens here, after the splash.
+    // Auto-capture starts listening inside init(), so auto-save still runs
+    // as soon as the history screen is shown.
+    unawaited(context.read<ClipsController>().init());
     _messageSub = context.read<ClipsController>().messages.listen((message) {
       rootMessengerKey.currentState
         ?..hideCurrentSnackBar()

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -30,6 +28,7 @@ Future<void> main() async {
       child: const CopyBoxApp(),
     ),
   );
-
-  unawaited(clips.init());
+  // ClipsController.init() (database, inbox import, auto-capture) is started by
+  // RootShell after the splash screen, so nothing touches the clipboard or the
+  // database while the splash shows.
 }

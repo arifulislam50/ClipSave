@@ -5,6 +5,12 @@ class AppInfo {
   static const String name = 'Copy Box';
   static const String version = '1.0.0';
 
+  /// How long the splash screen shows on every start.
+  static const Duration splashDuration = Duration(seconds: 5);
+
+  /// Splash length when the system asks for reduced motion.
+  static const Duration reducedMotionSplashDuration = Duration(seconds: 1);
+
   /// Clips longer than this are refused, to keep the database small and fast.
   static const int maxClipLength = 100000;
 

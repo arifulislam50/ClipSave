@@ -5,6 +5,7 @@ import 'core/constants.dart';
 import 'core/theme/app_theme.dart';
 import 'state/settings_controller.dart';
 import 'ui/root_shell.dart';
+import 'ui/screens/splash_screen.dart';
 
 /// Global messenger so controller messages can show snackbars anywhere.
 final GlobalKey<ScaffoldMessengerState> rootMessengerKey =
@@ -23,7 +24,7 @@ class CopyBoxApp extends StatelessWidget {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: themeMode,
-      home: const RootShell(),
+      home: SplashScreen(next: (_) => const RootShell()),
     );
   }
 }
