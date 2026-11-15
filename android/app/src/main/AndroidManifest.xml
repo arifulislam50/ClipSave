@@ -8,6 +8,8 @@
     -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Quick-save notification (Android 13+): requested ONLY when the user turns it on. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Only to show the quick-save notification again after a restart, if it is on. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 

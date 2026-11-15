@@ -26,9 +26,11 @@ class CaptureGuideScreen extends StatelessWidget {
             title: '1. Auto-save when you open Copy Box',
             body:
                 'Copy text anywhere, then switch to Copy Box. New clipboard text is '
-                'saved automatically. On Android 12 and newer you may see a short '
-                '"Copy Box pasted from your clipboard" notice; that is Android '
-                'showing you the read. You can turn this off in Settings.',
+                'saved automatically. You can turn auto-save off in Settings. On '
+                'Android 12 and newer, Android shows its own "Copy Box pasted from '
+                'your clipboard" notice every time the clipboard is read (on open, '
+                'from the tile or the notification Save button); apps cannot turn '
+                'that notice off.',
           ),
           _Section(
             icon: Icons.grid_view_rounded,
@@ -41,6 +43,18 @@ class CaptureGuideScreen extends StatelessWidget {
                 'Copy Box"; the text is checked and added to your history the next '
                 'time you open the app. If the phone is locked, you are asked to '
                 'unlock first.',
+          ),
+          _Section(
+            icon: Icons.notifications_active_outlined,
+            title: 'Notification Save button',
+            body:
+                'Turn on Settings > Quick-save notification. A silent notification '
+                'with a "Save copied text" button stays in the shade; tap it after '
+                'you copy something. Like the tile, it opens an invisible window for '
+                'a moment to read the clipboard, then saves the text even if you never '
+                'open Copy Box. The notification never shows clip text. On Android 13+ '
+                'Copy Box asks for the notification permission only when you turn '
+                'this on.',
           ),
           _Section(
             icon: Icons.text_fields_rounded,

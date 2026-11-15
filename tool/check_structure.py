@@ -107,7 +107,7 @@ kt = (root / 'android/app/src/main/kotlin/com/clipsave/app/MainActivity.kt').rea
 dart = (root / 'lib/platform/clipboard_bridge.dart').read_text()
 for ch in re.findall(r'"(com\.clipsave\.app/\w+)"', kt):
     if f"'{ch}'" not in dart: errors.append(f'channel {ch} not used in Dart')
-for m in re.findall(r"invokeMethod<[^>]+>\(\s*'(\w+)'", dart):
+for m in re.findall(r"invoke(?:Map|List)?Method<.*?>\(\s*'(\w+)'", dart):
     if f'"{m}"' not in kt: errors.append(f'method {m} not handled in Kotlin')
 
 # ---- Security invariants -------------------------------------------------

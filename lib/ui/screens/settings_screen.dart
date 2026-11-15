@@ -8,6 +8,7 @@ import '../../platform/clipboard_bridge.dart';
 import '../../state/clips_controller.dart';
 import '../../state/settings_controller.dart';
 import '../actions/clip_actions.dart';
+import '../actions/quick_save_actions.dart';
 import '../widgets/section_header.dart';
 import 'capture_guide_screen.dart';
 import 'privacy_screen.dart';
@@ -87,6 +88,16 @@ class SettingsScreen extends StatelessWidget {
                   'that looks like a password, one-time code, card number or key'),
               value: settings.skipSensitive,
               onChanged: settings.setSkipSensitive,
+            ),
+            SwitchListTile(
+              key: const ValueKey<String>('quick-save-switch'),
+              secondary: const Icon(Icons.notifications_active_outlined),
+              title: const Text('Quick-save notification'),
+              subtitle: const Text(
+                  'Shows a Save button in the notification shade. Tap it after you copy something.'),
+              // Real state: off if the notification permission is missing.
+              value: settings.quickSaveEnabled,
+              onChanged: (v) => QuickSaveActions.setEnabled(context, v),
             ),
             ListTile(
               leading: const Icon(Icons.grid_view_rounded),

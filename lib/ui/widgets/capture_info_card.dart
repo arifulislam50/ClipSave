@@ -37,8 +37,10 @@ class CaptureInfoCard extends StatelessWidget {
             Text(
               'Android only lets apps read the clipboard while they are open. '
               'Copy Box saves new copies when you open it. From other apps, use '
-              'the Quick Settings tile, "Save to Copy Box" in the text menu, or Share. '
-              'Tap New clip to type your own text.',
+              'the Quick Settings tile, the notification Save button, "Save to Copy '
+              'Box" in the text menu, or Share. Tap New clip to type your own text. '
+              'Android 12+ shows its own "pasted from your clipboard" notice whenever '
+              'the clipboard is read; that notice cannot be turned off.',
               style: TextStyle(color: scheme.onSecondaryContainer),
             ),
             Align(

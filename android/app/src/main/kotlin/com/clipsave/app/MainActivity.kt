@@ -1,11 +1,15 @@
 package com.clipsave.app
 
+import android.Manifest
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
 import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
+import io.flutter.plugin.common.MethodChannel.Result
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import io.flutter.embedding.android.FlutterActivity
@@ -23,6 +27,10 @@ import io.flutter.plugin.common.MethodChannel
  *   requestAddTile -> String   (Android 13+ "add tile" system prompt)
  *   sdkInt        -> Int
  *   setWindowBackground(color) (ARGB; the window starts pink, then follows the app theme)
+ *   quickSaveStatus -> {enabled}   (real state: setting on AND notification allowed)
+ *   setQuickSave(enabled) -> {enabled, denied, permanentlyDenied}
+ *                    (asks for POST_NOTIFICATIONS on Android 13+ only when turning on)
+ *   openNotificationSettings       (ACTION_APP_NOTIFICATION_SETTINGS)
  *
  * Event channel "com.clipsave.app/clipboard_events":
  *   Emits the clipboard when Copy Box gains focus or the clip changes while
@@ -38,6 +46,9 @@ class MainActivity : FlutterActivity() {
     // main thread. Created lazily on first use, not at start-up.
     private var ioExecutor: ExecutorService? = null
     private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
+
+    /** Pending Flutter reply while the POST_NOTIFICATIONS dialog is showing. */
+    private var pendingQuickSaveResult: Result? = null
 
     private fun io(): ExecutorService =
         ioExecutor ?: Executors.newSingleThreadExecutor().also { ioExecutor = it }
@@ -79,6 +90,15 @@ class MainActivity : FlutterActivity() {
                 }
                 "requestAddTile" -> TileHelper.requestAddTile(this) { status -> result.success(status) }
                 "sdkInt" -> result.success(Build.VERSION.SDK_INT)
+                "quickSaveStatus" -> result.success(mapOf("enabled" to quickSaveActive()))
+                "setQuickSave" -> setQuickSave(call.argument<Boolean>("enabled") == true, result)
+                "openNotificationSettings" -> {
+                    startActivity(
+                        Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                            .putExtra(Settings.EXTRA_APP_PACKAGE, packageName),
+                    )
+                    result.success(null)
+                }
                 "setWindowBackground" -> {
                     val color = call.argument<Number>("color")
                     if (color == null) {
@@ -125,6 +145,62 @@ class MainActivity : FlutterActivity() {
         super.onPause()
     }
 
+    /** Real state. If the permission was revoked, the stored setting is turned off. */
+    private fun quickSaveActive(): Boolean {
+        if (!QuickSaveNotification.isEnabled(this)) return false
+        if (QuickSaveNotification.hasPermission(this)) return true
+        QuickSaveNotification.setEnabled(this, false)
+        QuickSaveNotification.cancel(this)
+        return false
+    }
+
+    private fun setQuickSave(enabled: Boolean, result: Result) {
+        if (!enabled) {
+            QuickSaveNotification.setEnabled(this, false)
+            QuickSaveNotification.cancel(this)
+            result.success(mapOf("enabled" to false))
+            return
+        }
+        if (QuickSaveNotification.hasPermission(this)) {
+            QuickSaveNotification.setEnabled(this, true)
+            QuickSaveNotification.post(this)
+            result.success(mapOf("enabled" to true))
+            return
+        }
+        // Android 13+ without permission: ask now (only because the user turned it on).
+        if (pendingQuickSaveResult != null) {
+            result.error("busy", "A permission request is already showing", null)
+            return
+        }
+        pendingQuickSaveResult = result
+        requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQUEST_NOTIFICATIONS)
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != REQUEST_NOTIFICATIONS) return
+        val result = pendingQuickSaveResult ?: return
+        pendingQuickSaveResult = null
+        if (QuickSaveNotification.hasPermission(this)) {
+            QuickSaveNotification.setEnabled(this, true)
+            QuickSaveNotification.post(this)
+            result.success(mapOf("enabled" to true))
+        } else {
+            QuickSaveNotification.setEnabled(this, false)
+            // No rationale after a denial means "don't ask again" (or blocked by
+            // policy): the system dialog will not show again, so Flutter offers settings.
+            val permanentlyDenied =
+                !shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)
+            result.success(
+                mapOf("enabled" to false, "denied" to true, "permanentlyDenied" to permanentlyDenied),
+            )
+        }
+    }
+
     override fun onDestroy() {
         ioExecutor?.shutdown()
         ioExecutor = null
@@ -143,6 +219,7 @@ class MainActivity : FlutterActivity() {
     }
 
     companion object {
+        private const val REQUEST_NOTIFICATIONS = 4202
         private const val METHOD_CHANNEL = "com.clipsave.app/native"
         private const val EVENT_CHANNEL = "com.clipsave.app/clipboard_events"
     }

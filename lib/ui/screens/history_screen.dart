@@ -14,6 +14,7 @@ import '../widgets/capture_info_card.dart';
 import '../widgets/clip_tile.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/filter_bar.dart';
+import '../widgets/quick_save_prompt_card.dart';
 import 'capture_guide_screen.dart';
 
 enum _HistoryMenu { clear, guide }
@@ -92,6 +93,7 @@ class HistoryScreen extends StatelessWidget {
           ),
           const FilterBar(),
           if (!guideDismissed) const CaptureInfoCard(),
+          const QuickSavePromptCard(),
           const Expanded(child: _ClipList()),
         ],
       ),
