@@ -81,7 +81,7 @@ Flutter UI (Material 3)  ──►  State (Provider ChangeNotifiers)  ──► 
 | `lib/ads/ads_service.dart` | UMP consent flow, then Mobile Ads init; `adsReady`, `privacyOptionsRequired`, `showPrivacyOptions()` |
 | `lib/ui/widgets/ad_banner.dart` | Large anchored adaptive banner (History and Folders only, plain `AdRequest()`) |
 | `lib/ui/widgets/app_logo.dart` | `AppLogo` CustomPaint (three stacked cards) and shared `LogoGeometry` |
-| `lib/ui/screens/splash_screen.dart` | Brand splash (5 s, 1 s with reduced motion); waits for timer + consent; never touches clipboard or DB |
+| `lib/ui/screens/splash_screen.dart` | Brand splash: leaves when settings + database are ready and ≥ 1.5 s have passed, never after 3 s (1 s minimum with reduced motion); ads consent starts in the background; never reads the clipboard |
 | `lib/ui/widgets/section_header.dart`, `category_visuals.dart` | Section labels; category icons, names, tints and `CategoryAvatar` |
 | `tool/generate_logo.py` | Generates all icon drawables, `assets/logo/logo.svg` and the 1024px PNGs from one geometry |
 | `assets/logo/` | `logo.svg`, `icon_1024.png` (store icon), `icon_foreground.png` |
@@ -176,9 +176,9 @@ flutter run
 | Search / filters / folders / favourites | Use each | List updates. A deleted folder's clips remain |
 | Swipe delete | Swipe left, tap Undo | Clip restored |
 | Themes | System / Light / Dark | Whole UI switches |
-| Splash | Cold-start the app (with clipboard text from another app) | Pink splash ~5 s with progress bar, then fade to History. **No** "pasted from your clipboard" notice until History appears; auto-save happens then |
+| Splash | Cold-start a **release** build (with clipboard text from another app) | Pink splash 1.5–3 s, then fade to History. **No** "pasted from your clipboard" notice until History appears; auto-save happens then |
 | Reduced motion | Enable "Remove animations", cold-start | Splash ~1 s, static bar, no fade |
-| Android 12+ system splash | Cold-start on Android 12+ (light and dark mode) | System splash is pink with white cards, then the Flutter splash |
+| Android 12+ system splash | Cold-start on Android 12+ (light and dark mode) | One pink screen with no icon, then the in-app splash; no black flash |
 | Consent (EEA) | Use an EEA device/VPN or UMP debug geography | Google consent form before any ad; Settings shows "Privacy and ad choices", which re-opens it |
 | Banner placement | Open History, Folders, Settings, New clip | Test banner only on History and Folders, above the nav bar; "New clip" FAB fully visible above it; no ad on Settings, editor, splash |
 | Copy button | Tap the round copy button on a tile; repeat with a password-like clip on Android 13+ | Copies; system preview hides the sensitive one |
@@ -189,7 +189,7 @@ Release builds and Play Store bundles: see **[BUILD.md](BUILD.md)**. Privacy pol
 
 ## Limits
 
-- The history list and search show the newest **2000** matching clips (`ClipRepository.query` limit). With "Unlimited" history, older clips stay stored but only appear once newer ones are deleted. Raise the limit if needed.
+- The history list loads the newest **50** matching clips, then 50 more each time you scroll near the end (`ClipsController.loadMore`). Category counts are computed in SQL.
 
 ## Verification status
 
@@ -203,6 +203,6 @@ SDK-free checks that were run and pass:
 | Structure + invariants | `python3 -I tool/check_structure.py .` | Imports, brackets, XML, resource refs, channel names; sensitivity gate; size cap; non-exported tile activity; **only AdMob permissions**; **AdMob App ID in manifest == `AdConfig`**; **only the two ad files use the ads SDK, they never reference clip data, `AdRequest()` has no targeting**; logo geometry identical in `app_logo.dart` and `tool/generate_logo.py` |
 | Contrast | (computed) | Dark: #F5F5F7 on #000000 19.3:1; #A1A1AA on #121214 7.3:1; pink #FD79A8 on black 8.5:1, on #1E1E22 6.7:1; tip #FDCB6E on #2A2110 10.5:1. Light: #1B1B1F on white 17.2:1; links #B01F63 6.5:1 (pink text on white would be 2.5:1). #2D3436 on #FD79A8 5.1:1. Category icons ≥ 5.6:1 (dark) / ≥ 4.1:1 (light) on their 18% tints. The amber star is decorative and has a "Favourite" label. |
 
-New Dart tests to run with `flutter test`: `test/copy_box_ui_test.dart` (theme colours, splash timing / init wait / failure / reduced motion, AppLogo, counter format, AdMob test-ID guard).
+New Dart tests to run with `flutter test`: `test/copy_box_ui_test.dart` (theme colours, splash timing min/max/background/failure/reduced motion, centring, AppLogo, AdMob test-ID guard), `test/history_screen_test.dart` (New clip FAB, empty state, tile expand/collapse, copy button vs tile tap, date line, filter chips), `test/clips_controller_test.dart` (sensitivity gate, Save anyway, paging, lazy settings), `test/time_format_test.dart` (date/time edge cases).
 
 See [CHANGELOG.md](CHANGELOG.md) for what changed in the security review.

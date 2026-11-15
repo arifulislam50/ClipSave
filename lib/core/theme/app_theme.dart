@@ -115,8 +115,12 @@ class AppTheme {
 
   static const Color seed = AppColors.primary;
 
-  static ThemeData light() => _build(_lightScheme(), CopyBoxColors.light);
-  static ThemeData dark() => _build(_darkScheme(), CopyBoxColors.dark);
+  // Built once and reused (MaterialApp rebuilds must not rebuild themes).
+  static final ThemeData _light = _build(_lightScheme(), CopyBoxColors.light);
+  static final ThemeData _dark = _build(_darkScheme(), CopyBoxColors.dark);
+
+  static ThemeData light() => _light;
+  static ThemeData dark() => _dark;
 
   /// fromSeed adds a pink tint to every surface role; each one is overridden
   /// here with a neutral value. (`ColorScheme.background` is deprecated in

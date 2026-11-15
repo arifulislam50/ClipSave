@@ -95,9 +95,30 @@ void main() {
     });
   });
 
-  group('splash', () {
-    testWidgets('shows brand, waits for timer AND initialisation, then navigates',
-        (tester) async {
+  group('splash timing (min 1.5 s, max 3 s)', () {
+    test('constants', () {
+      expect(AppInfo.splashDuration, const Duration(seconds: 2));
+      expect(AppInfo.splashMinDuration, const Duration(milliseconds: 1500));
+      expect(AppInfo.splashMaxDuration, const Duration(seconds: 3));
+      expect(AppInfo.reducedMotionSplashDuration, const Duration(seconds: 1));
+    });
+
+    testWidgets('fast initialisation: leaves as soon as 1.5 s have passed', (tester) async {
+      await tester.pumpWidget(_host(SplashScreen(
+        initialize: () async {},
+        next: (_) => const Text('HOME'),
+      )));
+      expect(find.text('Copy Box'), findsOneWidget);
+      expect(find.text('Save everything you copy'), findsOneWidget);
+      expect(find.text('Your clips stay on your device'), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 1400));
+      expect(find.text('HOME'), findsNothing);
+      await tester.pump(const Duration(milliseconds: 150));
+      await tester.pumpAndSettle();
+      expect(find.text('HOME'), findsOneWidget);
+    });
+
+    testWidgets('slow initialisation: leaves at 3 s, work continues in background', (tester) async {
       var initDone = false;
       await tester.pumpWidget(_host(SplashScreen(
         initialize: () async {
@@ -106,18 +127,34 @@ void main() {
         },
         next: (_) => const Text('HOME'),
       )));
-      expect(find.text('Copy Box'), findsOneWidget);
-      expect(find.text('Save everything you copy'), findsOneWidget);
-      expect(find.text('Your clips stay on your device'), findsOneWidget);
-
-      await tester.pump(AppInfo.splashDuration); // timer done, init not yet
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 2900));
       expect(find.text('HOME'), findsNothing);
-
-      await tester.pump(const Duration(seconds: 2)); // init finishes
+      await tester.pump(const Duration(milliseconds: 150));
       await tester.pumpAndSettle();
-      expect(initDone, isTrue);
       expect(find.text('HOME'), findsOneWidget);
+      expect(initDone, isFalse);
+      await tester.pump(const Duration(seconds: 5)); // let the slow work finish
+      expect(initDone, isTrue);
+    });
+
+    testWidgets('background work is started but never awaited', (tester) async {
+      var started = false;
+      await tester.pumpWidget(_host(SplashScreen(
+        initialize: () async {},
+        background: [
+          () async {
+            started = true;
+            await Future<void>.delayed(const Duration(seconds: 30));
+          },
+        ],
+        next: (_) => const Text('HOME'),
+      )));
+      await tester.pump(); // first frame -> work starts
+      expect(started, isTrue);
+      await tester.pump(AppInfo.splashMinDuration);
+      await tester.pumpAndSettle();
+      expect(find.text('HOME'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 30));
     });
 
     testWidgets('a failing initialisation never traps the user', (tester) async {
@@ -125,14 +162,14 @@ void main() {
         initialize: () async => throw StateError('consent failed'),
         next: (_) => const Text('HOME'),
       )));
-      await tester.pump(AppInfo.splashDuration);
+      await tester.pump(AppInfo.splashMinDuration);
       await tester.pumpAndSettle();
       expect(find.text('HOME'), findsOneWidget);
     });
 
     testWidgets('reduced motion: 1 second, static progress bar', (tester) async {
       await tester.pumpWidget(_host(
-        SplashScreen(next: (_) => const Text('HOME')),
+        SplashScreen(initialize: () async {}, next: (_) => const Text('HOME')),
         reduceMotion: true,
       ));
       final bar = tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator));
@@ -169,7 +206,7 @@ void main() {
     expect(tagline.top - title.bottom, closeTo(8, 0.5));
     expect(bar.top - tagline.bottom, closeTo(32, 0.5));
     expect(footer.top - bar.bottom, closeTo(14, 0.5));
-    await tester.pump(AppInfo.splashDuration);
+    await tester.pump(AppInfo.splashMaxDuration);
     await tester.pumpAndSettle();
   });
 

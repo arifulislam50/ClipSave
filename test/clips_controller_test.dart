@@ -1,10 +1,12 @@
+import 'package:clipsave/core/utils/content_classifier.dart';
 import 'package:clipsave/data/db/app_database.dart';
+import 'package:clipsave/data/models/clip_filter.dart';
 import 'package:clipsave/data/repositories/clip_repository.dart';
 import 'package:clipsave/data/repositories/settings_repository.dart';
 import 'package:clipsave/state/app_message.dart';
 import 'package:clipsave/state/clips_controller.dart';
 import 'package:clipsave/state/settings_controller.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -99,6 +101,33 @@ void main() {
     bridge.events.add(clip('buy milk', source: 'auto'));
     await until(() => saved().isNotEmpty);
     expect(saved(), ['buy milk']);
+  });
+
+  test('history pages: newest 50 first, then 50 more on demand', () async {
+    bridge.inbox = [for (var i = 0; i < 120; i++) clip('clip $i', source: 'share')];
+    await start();
+    expect(controller.items.length, ClipsController.pageSize);
+    expect(controller.hasMore, isTrue);
+    await controller.loadMore();
+    expect(controller.items.length, 100);
+    await controller.loadMore();
+    expect(controller.items.length, 120);
+    expect(controller.hasMore, isFalse);
+    // Changing the filter starts again from the first page.
+    controller.setFilter(const ClipFilter.category(ClipCategory.text));
+    await until(() => controller.items.length == ClipsController.pageSize);
+    expect(controller.hasMore, isTrue);
+  });
+
+  test('settings load lazily: defaults first, saved values after load()', () async {
+    SharedPreferences.setMockInitialValues({'theme_mode': 'light', 'auto_capture': false});
+    final lazy = SettingsController();
+    expect(lazy.isLoaded, isFalse);
+    expect(lazy.themeMode, ThemeMode.dark);
+    expect(lazy.autoCapture, isTrue);
+    await lazy.load();
+    expect(lazy.themeMode, ThemeMode.light);
+    expect(lazy.autoCapture, isFalse);
   });
 
   test('auto-save skip offers "Save anyway" and stores only on request', () async {

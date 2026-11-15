@@ -263,8 +263,18 @@ class _ClipListState extends State<_ClipList> with WidgetsBindingObserver {
 
     return ListView.builder(
       padding: const EdgeInsets.only(top: 4, bottom: 96),
-      itemCount: items.length,
+      itemCount: items.length + (controller.hasMore ? 1 : 0),
       itemBuilder: (context, index) {
+        // Pagination: fetch the next 50 when the user nears the end.
+        if (controller.hasMore && index >= items.length - 10) {
+          WidgetsBinding.instance.addPostFrameCallback((_) => controller.loadMore());
+        }
+        if (index >= items.length) {
+          return const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: SizedBox.square(dimension: 24, child: CircularProgressIndicator(strokeWidth: 2))),
+          );
+        }
         final item = items[index];
         return Dismissible(
           key: ValueKey<int?>(item.id),

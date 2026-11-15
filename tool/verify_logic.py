@@ -99,7 +99,7 @@ db = sqlite3.connect(':memory:')
 db.execute('PRAGMA foreign_keys = ON')
 db.execute(const('createFolders')); db.execute(const('createClips'))
 for sql in indexes: db.execute(sql)
-check(len(indexes) == 4, 'schema: 4 indexes created')
+check(len(indexes) == 5, 'schema: 5 indexes created (incl. v2 created_at index)')
 
 def now(): return int(time.time() * 1000)
 def save(content, source='manual'):
@@ -151,6 +151,26 @@ db.execute('DELETE FROM clips')
 for t in ['https://a.com', 'https://b.com', 'me@example.com', 'hello']: save(t)
 counts = dict(db.execute(const('categoryCounts')).fetchall())
 check(counts == {'link': 2, 'email': 1, 'text': 1}, 'category counts query')
+
+# Pagination: newest 50 first, then the next page via OFFSET (same order).
+db.execute('DELETE FROM clips')
+for i in range(120): save(f'clip {i:03d}')
+page1 = [r[0] for r in db.execute('SELECT content FROM clips ORDER BY updated_at DESC, id DESC LIMIT 51')]
+page2 = [r[0] for r in db.execute('SELECT content FROM clips ORDER BY updated_at DESC, id DESC LIMIT 50 OFFSET 50')]
+check(page1[0] == 'clip 119' and len(page1) == 51, 'first page: newest first, +1 row signals more')
+check(page2[0] == 'clip 069' and not set(page1[:50]) & set(page2), 'second page continues without overlap')
+
+# v1 -> v2 migration: additive index, data intact, idempotent.
+mig = sqlite3.connect(':memory:')
+mig.execute(const('createFolders')); mig.execute(const('createClips'))
+v1_indexes = [i.replace('IF NOT EXISTS ', '') for i in indexes if 'idx_clips_created' not in i]
+for sql in v1_indexes: mig.execute(sql)
+mig.execute("INSERT INTO clips (content, created_at, updated_at) VALUES ('old data', 1, 1)")
+created_idx = re.search(r"createdIndex =\s*'([^']+)'", schema).group(1)
+mig.execute(created_idx); mig.execute(created_idx)  # twice: must not fail
+names = {r[0] for r in mig.execute("SELECT name FROM sqlite_master WHERE type='index'")}
+check('idx_clips_created' in names and mig.execute('SELECT content FROM clips').fetchone()[0] == 'old data',
+      'v1->v2 migration adds idx_clips_created, keeps data, is idempotent')
 
 print(f'\n{"ALL PASSED" if fails == 0 else str(fails) + " FAILED"}')
 sys.exit(1 if fails else 0)

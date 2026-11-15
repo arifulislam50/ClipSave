@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'ads/ads_service.dart';
 import 'core/constants.dart';
 import 'core/theme/app_theme.dart';
+import 'state/clips_controller.dart';
 import 'state/settings_controller.dart';
 import 'ui/root_shell.dart';
 import 'ui/screens/splash_screen.dart';
@@ -32,10 +33,15 @@ class CopyBoxApp extends StatelessWidget {
         value: AppTheme.overlayStyle(Theme.of(context).brightness),
         child: child ?? const SizedBox.shrink(),
       ),
-      // Consent (UMP) and Mobile Ads initialisation run during the splash.
-      // They never touch the clipboard or the clip database.
+      // The splash waits (min 1.5 s, max 3 s) for settings + database open,
+      // run in parallel. Ads consent + Mobile Ads start in the background after
+      // the first frame and are never awaited; banners load only on History.
       home: SplashScreen(
-        initialize: AdsService.instance.initialize,
+        initialize: () => Future.wait<void>([
+          context.read<SettingsController>().load(),
+          context.read<ClipsController>().warmUp(),
+        ]),
+        background: [AdsService.instance.initialize],
         next: (_) => const RootShell(),
       ),
     );

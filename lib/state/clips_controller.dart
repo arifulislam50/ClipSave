@@ -76,6 +76,12 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
   ClipFilter _filter = ClipFilter.all;
   bool _loading = true;
   int _sdkInt = 0;
+
+  /// History is paged: the newest [pageSize] clips first, more on scroll.
+  static const int pageSize = 50;
+  int _wanted = pageSize;
+  bool _hasMore = false;
+  bool _loadingMore = false;
   int _lastLimit = -1;
 
   StreamSubscription<CapturedClip>? _autoSub;
@@ -94,6 +100,9 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
   ClipFilter get filter => _filter;
   bool get loading => _loading;
   int get sdkInt => _sdkInt;
+
+  /// True when older clips exist beyond [items] (for the current filter).
+  bool get hasMore => _hasMore;
   int get heldSensitiveCount => _heldSensitive.length;
 
   Folder? folderById(int? id) {
@@ -106,10 +115,15 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
 
   // ------------------------------------------------------------ lifecycle --
 
+  /// Opens the database (no reads of clips, no clipboard access). Called by
+  /// the splash so the first history query is fast.
+  Future<void> warmUp() => _repo.open();
+
   Future<void> init() async {
     if (_initialized) return;
     _initialized = true;
     WidgetsBinding.instance.addObserver(this);
+    await _settings.load(); // usually already loaded by the splash
     _lastLimit = _settings.historyLimit;
     _settings.addListener(_onSettingsChanged);
     _sdkInt = await _bridge.sdkInt();
@@ -185,11 +199,13 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
         !folders.any((f) => f.id == _filter.folderId)) {
       _filter = ClipFilter.all;
     }
-    final items = await _repo.query(search: _query, filter: _filter);
-    final counts = await _repo.categoryCounts();
+    // One extra row tells whether there is another page.
+    final rows = await _repo.query(search: _query, filter: _filter, limit: _wanted + 1);
+    final counts = await _repo.categoryCounts(); // counted in SQL, not in Dart
     _folders = folders;
     _categoryCounts = counts;
-    _items = items;
+    _hasMore = rows.length > _wanted;
+    _items = _hasMore ? rows.sublist(0, _wanted) : rows;
     _loading = false;
     _notify();
   }
@@ -415,7 +431,20 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
 
   // ------------------------------------------------------ search & filter --
 
+  /// Loads the next page of older clips (called when the list nears its end).
+  Future<void> loadMore() async {
+    if (!_hasMore || _loadingMore) return;
+    _loadingMore = true;
+    try {
+      _wanted = _items.length + pageSize;
+      await refresh();
+    } finally {
+      _loadingMore = false;
+    }
+  }
+
   void setQuery(String value) {
+    _wanted = pageSize;
     _query = value;
     _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 200), refresh);
@@ -423,6 +452,7 @@ class ClipsController extends ChangeNotifier with WidgetsBindingObserver {
 
   void setFilter(ClipFilter value) {
     if (value == _filter) return;
+    _wanted = pageSize;
     _filter = value;
     unawaited(refresh());
   }

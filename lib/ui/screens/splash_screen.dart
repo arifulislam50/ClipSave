@@ -9,10 +9,12 @@ import '../widgets/app_logo.dart';
 
 /// Full-screen brand splash shown on every app start.
 ///
-/// It never reads the clipboard or touches the database: [initialize] must
-/// only do work that is safe before the history screen exists. Navigation to
-/// [next] happens once BOTH the splash duration has elapsed AND [initialize]
-/// has finished (or failed).
+/// It never reads the clipboard. [initialize] (settings + opening the
+/// database) and [background] (ads consent / SDK start) begin after the
+/// first frame. Navigation to [next] happens once [initialize] has finished
+/// (or failed) AND [AppInfo.splashMinDuration] has passed, or at
+/// [AppInfo.splashMaxDuration] at the latest, while anything slow continues
+/// in the background. [background] work is never awaited.
 ///
 /// Layout: one Column, centred horizontally and vertically: logo (156 wide),
 /// 28, "Copy Box", 8, tagline, 32, progress bar, 14, footer.
@@ -21,10 +23,12 @@ class SplashScreen extends StatefulWidget {
     super.key,
     required this.next,
     this.initialize,
+    this.background = const [],
   });
 
   final WidgetBuilder next;
   final Future<void> Function()? initialize;
+  final List<Future<void> Function()> background;
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -36,6 +40,11 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   Animation<double>? _logoOpacity;
   bool _started = false;
   bool _reduceMotion = false;
+  bool _minElapsed = false;
+  bool _initDone = false;
+  bool _navigated = false;
+  Timer? _minTimer;
+  Timer? _maxTimer;
 
   static const Color _ink = AppColors.onPrimary;
   static const double logoWidth = 156;
@@ -47,28 +56,42 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     if (_started) return;
     _started = true;
     _reduceMotion = MediaQuery.disableAnimationsOf(context);
-    final duration = _reduceMotion
-        ? AppInfo.reducedMotionSplashDuration
-        : AppInfo.splashDuration;
+    final minimum = _reduceMotion ? AppInfo.reducedMotionSplashDuration : AppInfo.splashMinDuration;
     if (!_reduceMotion) {
-      _progress = AnimationController(vsync: this, duration: duration)..forward();
+      _progress = AnimationController(vsync: this, duration: AppInfo.splashDuration)..forward();
       _logoFade = AnimationController(vsync: this, duration: _logoFadeDuration)..forward();
       _logoOpacity = CurvedAnimation(parent: _logoFade!, curve: Curves.easeOut);
     }
-    unawaited(_run(duration));
+    _minTimer = Timer(minimum, () {
+      _minElapsed = true;
+      _maybeContinue();
+    });
+    _maxTimer = Timer(AppInfo.splashMaxDuration, _continue);
+    // Start work after the first frame so it never delays it.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startWork());
   }
 
-  Future<void> _run(Duration duration) async {
-    Future<void> init() async {
-      try {
-        await widget.initialize?.call();
-      } catch (_) {
-        // Initialisation problems must never trap the user on the splash.
-      }
+  void _startWork() {
+    for (final task in widget.background) {
+      unawaited(Future<void>.sync(task).catchError((Object _) {}));
     }
+    Future<void>.sync(() => widget.initialize?.call()).catchError((Object _) {
+      // Initialisation problems must never trap the user on the splash.
+    }).whenComplete(() {
+      _initDone = true;
+      _maybeContinue();
+    });
+  }
 
-    await Future.wait<void>([Future<void>.delayed(duration), init()]);
-    if (!mounted) return;
+  void _maybeContinue() {
+    if (_minElapsed && _initDone) _continue();
+  }
+
+  void _continue() {
+    if (_navigated || !mounted) return;
+    _navigated = true;
+    _minTimer?.cancel();
+    _maxTimer?.cancel();
     unawaited(Navigator.of(context).pushReplacement(
       PageRouteBuilder<void>(
         pageBuilder: (context, _, __) => widget.next(context),
@@ -82,6 +105,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
   @override
   void dispose() {
+    _minTimer?.cancel();
+    _maxTimer?.cancel();
     _progress?.dispose();
     _logoFade?.dispose();
     super.dispose();

@@ -4,6 +4,10 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.drawable.ColorDrawable
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
@@ -30,6 +34,14 @@ class MainActivity : FlutterActivity() {
     private var eventSink: EventChannel.EventSink? = null
     private var listenerRegistered = false
 
+    // Disk work (inbox JSON in SharedPreferences, commit()) never runs on the
+    // main thread. Created lazily on first use, not at start-up.
+    private var ioExecutor: ExecutorService? = null
+    private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
+
+    private fun io(): ExecutorService =
+        ioExecutor ?: Executors.newSingleThreadExecutor().also { ioExecutor = it }
+
     private val clipboard: ClipboardManager by lazy {
         getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     }
@@ -54,7 +66,17 @@ class MainActivity : FlutterActivity() {
                         result.success(null)
                     }
                 }
-                "drainInbox" -> result.success(ClipInbox.drain(this))
+                "drainInbox" -> {
+                    val appContext = applicationContext
+                    io().execute {
+                        val items = try {
+                            ClipInbox.drain(appContext)
+                        } catch (e: Exception) {
+                            emptyList()
+                        }
+                        mainHandler.post { result.success(items) }
+                    }
+                }
                 "requestAddTile" -> TileHelper.requestAddTile(this) { status -> result.success(status) }
                 "sdkInt" -> result.success(Build.VERSION.SDK_INT)
                 "setWindowBackground" -> {
@@ -97,6 +119,12 @@ class MainActivity : FlutterActivity() {
             listenerRegistered = false
         }
         super.onPause()
+    }
+
+    override fun onDestroy() {
+        ioExecutor?.shutdown()
+        ioExecutor = null
+        super.onDestroy()
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
