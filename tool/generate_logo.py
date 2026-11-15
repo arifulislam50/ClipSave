@@ -4,7 +4,6 @@ Outputs (paths relative to the project root):
   android/app/src/main/res/drawable/ic_launcher_foreground.xml   108dp adaptive foreground
   android/app/src/main/res/drawable/ic_launcher_monochrome.xml   Android 13 themed icon
   android/app/src/main/res/drawable/ic_tile_clip.xml             Quick Settings tile glyph
-  android/app/src/main/res/drawable/ic_splash_icon.xml           Android 12+ system splash icon
   assets/logo/logo.svg                                           rounded tile (matches AppLogo)
   assets/logo/icon_1024.png                                      pink square + logo (store icon)
   assets/logo/icon_foreground.png                                transparent foreground
@@ -108,8 +107,7 @@ write(res + 'ic_launcher_monochrome.xml', vector(108, card_paths(),
       'Android 13+ themed icon: the same cards in one colour, no lines.'))
 write(res + 'ic_tile_clip.xml', vector(24, group(card_paths(), translateX=-27, translateY=-27, scaleX=1.5, scaleY=1.5),
       'Quick Settings tile glyph (system-tinted): the cards, no lines.'))
-write(res + 'ic_splash_icon.xml', vector(108, card_paths(),
-      'Android 12+ system splash icon: white cards on the #FD79A8 splash background.'))
+# The Android 12+ system splash uses a transparent icon (drawable/ic_splash_empty.xml), not the logo.
 
 # ---- SVG (rounded tile, AppLogo zoom) ---------------------------------------
 tile_r = GRID * TILE_RADIUS
